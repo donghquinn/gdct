@@ -69,7 +69,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitConnect("postgres", &gdct.DBConfig{
+    conn, _ := gdct.InitConnect("postgres", gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
