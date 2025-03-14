@@ -22,7 +22,7 @@ type MariadbConfig struct {
 }
 
 type MariaDbInstance struct {
-	*sql.DB
+	conn *sql.DB
 }
 
 // DB 연결 인스턴스
@@ -69,7 +69,7 @@ func decideDefaultConfigs(cfg MariadbConfig) MariadbConfig {
 func (connect *MariaDbInstance) CreateTable(queryList []string) error {
 	ctx := context.Background()
 
-	tx, txErr := connect.Begin()
+	tx, txErr := connect.conn.Begin()
 
 	if txErr != nil {
 		log.Printf("[CREATE_TABLE] Begin Transaction Error: %v", txErr)
@@ -107,14 +107,14 @@ func (connect *MariaDbInstance) CheckConnection() error {
 	log.Printf("Waiting for Database Connection,,,")
 	time.Sleep(time.Second * 10)
 
-	pingErr := connect.Ping()
+	pingErr := connect.conn.Ping()
 
 	if pingErr != nil {
 		log.Printf("[CONNECTION] Database Ping Error: %v", pingErr)
 		return pingErr
 	}
 
-	defer connect.Close()
+	defer connect.conn.Close()
 
 	return nil
 }
@@ -133,7 +133,7 @@ func (connect *MariaDbInstance) QueryMultiple(queryString string, args ...string
 		arguments = append(arguments, arg)
 	}
 
-	result, err := connect.Query(queryString, arguments...)
+	result, err := connect.conn.Query(queryString, arguments...)
 
 	if err != nil {
 		log.Printf("[QUERY] Query Error: %v\n", err)
@@ -141,7 +141,7 @@ func (connect *MariaDbInstance) QueryMultiple(queryString string, args ...string
 		return nil, err
 	}
 
-	defer connect.Close()
+	defer connect.conn.Close()
 
 	return result, nil
 }
@@ -160,7 +160,7 @@ func (connect *MariaDbInstance) QuerySingle(queryString string, args ...string) 
 		arguments = append(arguments, arg)
 	}
 
-	result := connect.QueryRow(queryString, arguments...)
+	result := connect.conn.QueryRow(queryString, arguments...)
 
 	if result.Err() != nil {
 		log.Printf("[QUERY] Query Error: %v\n", result.Err())
@@ -168,7 +168,7 @@ func (connect *MariaDbInstance) QuerySingle(queryString string, args ...string) 
 		return nil, result.Err()
 	}
 
-	defer connect.Close()
+	defer connect.conn.Close()
 
 	return result, nil
 }
@@ -187,7 +187,7 @@ func (connect *MariaDbInstance) InsertQuery(queryString string, args ...string) 
 		arguments = append(arguments, arg)
 	}
 
-	insertResult, insertErr := connect.Exec(queryString, arguments...)
+	insertResult, insertErr := connect.conn.Exec(queryString, arguments...)
 
 	if insertErr != nil {
 		log.Printf("[INSERT] Insert Query Err: %v", insertErr)
@@ -195,7 +195,7 @@ func (connect *MariaDbInstance) InsertQuery(queryString string, args ...string) 
 		return -99999, insertErr
 	}
 
-	defer connect.Close()
+	defer connect.conn.Close()
 
 	// Insert ID
 	insertId, insertIdErr := insertResult.LastInsertId()
@@ -223,7 +223,7 @@ func (connect *MariaDbInstance) UpdateQuery(queryString string, args ...string) 
 		arguments = append(arguments, arg)
 	}
 
-	updateResult, updateErr := connect.Exec(queryString, arguments...)
+	updateResult, updateErr := connect.conn.Exec(queryString, arguments...)
 
 	if updateErr != nil {
 		log.Printf("[UPDATE] Update Query Err: %v", updateErr)
@@ -231,7 +231,7 @@ func (connect *MariaDbInstance) UpdateQuery(queryString string, args ...string) 
 		return -99999, updateErr
 	}
 
-	defer connect.Close()
+	defer connect.conn.Close()
 
 	// Insert ID
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
@@ -259,7 +259,7 @@ func (connect *MariaDbInstance) DeleteQuery(queryString string, args ...string) 
 		arguments = append(arguments, arg)
 	}
 
-	delResult, delErr := connect.Exec(queryString, arguments...)
+	delResult, delErr := connect.conn.Exec(queryString, arguments...)
 
 	if delErr != nil {
 		log.Printf("[DELETE] Delete Query Err: %v", delErr)
@@ -267,7 +267,7 @@ func (connect *MariaDbInstance) DeleteQuery(queryString string, args ...string) 
 		return -99999, delErr
 	}
 
-	defer connect.Close()
+	defer connect.conn.Close()
 
 	// Insert ID
 	affectedRow, afftedRowErr := delResult.RowsAffected()
