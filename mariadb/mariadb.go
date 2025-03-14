@@ -10,73 +10,69 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type DataBaseConnector struct {
+type MariadbConfig struct {
+	UserName     string
+	Password     string
+	Host         string
+	Port         string
+	Database     string
+	MaxLifeTime  time.Duration // time.Duration 타입을 권장 (예: 60 * time.Second)
+	MaxIdleConns int
+	MaxOpenConns int
+}
+
+type MariaDbInstance struct {
 	*sql.DB
 }
 
 // DB 연결 인스턴스
-func InitMariadbConnection(userName string, password string, host string, port string, database string) (*DataBaseConnector, error) {
+func InitMariadbConnection(cfg MariadbConfig) (*MariaDbInstance, error) {
 	dbUrl := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-		userName,
-		password,
-		host,
-		port,
-		database,
+		cfg.UserName,
+		cfg.Password,
+		cfg.Host,
+		cfg.Password,
+		cfg.Database,
 	)
 
 	db, err := sql.Open("mysql", dbUrl)
 
 	if err != nil {
-		log.Printf("[DATABASE] Start Database Connection Error: %v", err)
+		log.Printf("[INIT] Start Database Connection Error: %v", err)
 
 		return nil, err
 	}
 
-	db.SetConnMaxLifetime(time.Second * 60)
-	db.SetMaxIdleConns(50)
-	db.SetMaxOpenConns(100)
+	cfg = decideDefaultConfigs(cfg)
 
-	connect := &DataBaseConnector{db}
+	db.SetConnMaxLifetime(cfg.MaxLifeTime)
+	db.SetMaxIdleConns(cfg.MaxIdleConns)
+	db.SetMaxOpenConns(cfg.MaxIdleConns)
+
+	connect := &MariaDbInstance{db}
 	return connect, nil
 }
 
-// // 테이블 생성
-// func CheckConnection() error {
-// 	log.Printf("Waiting for Database Connection,,,")
-// 	time.Sleep(time.Second * 10)
+func decideDefaultConfigs(cfg MariadbConfig) MariadbConfig {
+	if cfg.MaxLifeTime == 0 {
+		cfg.MaxLifeTime = 60 * time.Second
+	}
+	if cfg.MaxIdleConns == 0 {
+		cfg.MaxIdleConns = 50
+	}
+	if cfg.MaxOpenConns == 0 {
+		cfg.MaxOpenConns = 100
+	}
+	return cfg
+}
 
-// 	connect, dbErr := InitDatabaseConnection()
-
-// 	if dbErr != nil {
-// 		return dbErr
-// 	}
-
-// 	pingErr := connect.Ping()
-
-// 	if pingErr != nil {
-// 		log.Printf("[DATABASE] Database Ping Error: %v", pingErr)
-// 		return pingErr
-// 	}
-
-// 	createErr := connect.CreateTable(queries.CreateTableQueryList)
-
-// 	if createErr != nil {
-// 		log.Printf("[DATABASE] Create Table Error: %v", createErr)
-// 		return createErr
-// 	}
-
-// 	defer connect.Close()
-
-// 	return nil
-// }
-
-func (connect *DataBaseConnector) CreateTable(queryList []string) error {
+func (connect *MariaDbInstance) CreateTable(queryList []string) error {
 	ctx := context.Background()
 
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[DATABASE] Begin Transaction Error: %v", txErr)
+		log.Printf("[CREATE_TABLE] Begin Transaction Error: %v", txErr)
 		return txErr
 	}
 
@@ -87,7 +83,7 @@ func (connect *DataBaseConnector) CreateTable(queryList []string) error {
 
 		if execErr != nil {
 			tx.Rollback()
-			log.Printf("[DATABASE] Create Table Querystring Transaction Exec Error: %v", execErr)
+			log.Printf("[CREATE_TABLE] Create Table Querystring Transaction Exec Error: %v", execErr)
 			return execErr
 		}
 	}
@@ -95,9 +91,30 @@ func (connect *DataBaseConnector) CreateTable(queryList []string) error {
 	commitErr := tx.Commit()
 
 	if commitErr != nil {
-		log.Printf("[DATABASE] Commit Transaction Error: %v", commitErr)
+		log.Printf("[CREATE_TABLE] Commit Transaction Error: %v", commitErr)
 		return commitErr
 	}
+
+	return nil
+}
+
+/*
+Check Connection
+
+Check Connections
+*/
+func (connect *MariaDbInstance) CheckConnection() error {
+	log.Printf("Waiting for Database Connection,,,")
+	time.Sleep(time.Second * 10)
+
+	pingErr := connect.Ping()
+
+	if pingErr != nil {
+		log.Printf("[CONNECTION] Database Ping Error: %v", pingErr)
+		return pingErr
+	}
+
+	defer connect.Close()
 
 	return nil
 }
@@ -109,7 +126,7 @@ Query Multiple Rows
 @args: Query Parameters
 @Return: Multiple Row Result
 */
-func (connect *DataBaseConnector) QueryMultiple(queryString string, args ...string) (*sql.Rows, error) {
+func (connect *MariaDbInstance) QueryMultiple(queryString string, args ...string) (*sql.Rows, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
@@ -136,7 +153,7 @@ Query Single Row
 @args: Query Parameters
 @Return: Single Row Result
 */
-func (connect *DataBaseConnector) QuerySingle(queryString string, args ...string) (*sql.Row, error) {
+func (connect *MariaDbInstance) QuerySingle(queryString string, args ...string) (*sql.Row, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
@@ -163,7 +180,7 @@ Insert Single Data
 @args: Query Parameters
 @Return: Insert ID
 */
-func (connect *DataBaseConnector) InsertQuery(queryString string, args ...string) (int64, error) {
+func (connect *MariaDbInstance) InsertQuery(queryString string, args ...string) (int64, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
@@ -195,11 +212,11 @@ func (connect *DataBaseConnector) InsertQuery(queryString string, args ...string
 /*
 Update Single Data
 
-@queryString: Query String with prepared statement
-@args: Query Parameters
-@Return: Affected Rows
+@ queryString: Query String with prepared statement
+@ args: Query Parameters
+@ Return: Affected Rows
 */
-func (connect *DataBaseConnector) UpdateQuery(queryString string, args ...string) (int64, error) {
+func (connect *MariaDbInstance) UpdateQuery(queryString string, args ...string) (int64, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
@@ -235,7 +252,7 @@ Delete Single Data
 @args: Query Parameters
 @Return: Affected Rows
 */
-func (connect *DataBaseConnector) DeleteQuery(queryString string, args ...string) (int64, error) {
+func (connect *MariaDbInstance) DeleteQuery(queryString string, args ...string) (int64, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
