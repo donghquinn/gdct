@@ -20,6 +20,7 @@ type DBConfig struct {
 	Host         string
 	Port         int
 	Database     string
+	SslMode      string
 	MaxLifeTime  time.Duration // time.Duration 타입을 권장 (예: 60 * time.Second)
 	MaxIdleConns int
 	MaxOpenConns int
