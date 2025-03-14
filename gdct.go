@@ -21,7 +21,7 @@ type DBConfig struct {
 	Port         int
 	Database     string
 	SslMode      string
-	MaxLifeTime  time.Duration // time.Duration 타입을 권장 (예: 60 * time.Second)
+	MaxLifeTime  time.Duration
 	MaxIdleConns int
 	MaxOpenConns int
 }
@@ -30,7 +30,6 @@ type DataBaseConnector struct {
 	*sql.DB
 }
 
-// InitConnection: DBConfig에 따라 알맞은 connection pool 생성
 func InitConnection(dbType DBType, cfg DBConfig) (*DataBaseConnector, error) {
 	switch dbType {
 	case MariaDB:

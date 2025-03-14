@@ -23,8 +23,6 @@ func InitPostgresConnection(cfg DBConfig) (*DataBaseConnector, error) {
 	db, err := sql.Open("postgres", dbUrl)
 
 	if err != nil {
-		log.Printf("[DATABASE] Start Database Connection Error: %v", err)
-
 		return nil, err
 	}
 
@@ -49,7 +47,6 @@ func (connect *DataBaseConnector) PgCheckConnection() error {
 	pingErr := connect.Ping()
 
 	if pingErr != nil {
-		log.Printf("[CHECK] Database Ping Error: %v", pingErr)
 		return pingErr
 	}
 
@@ -64,27 +61,25 @@ func (connect *DataBaseConnector) PgCreateTable(queryList []string) error {
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[DATABASE] Begin Transaction Error: %v", txErr)
-		return txErr
+		return fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[CREATE_TABLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	for _, queryString := range queryList {
 		_, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[DATABASE] Create Table Querystring Transaction Exec Error: %v", execErr)
-			return execErr
+			return fmt.Errorf("exec transaction context error: %w", execErr)
 		}
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[DATABASE] Commit Transaction Error: %v", commitErr)
-		return commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return nil
@@ -107,9 +102,7 @@ func (connect *DataBaseConnector) PgSelectMultiple(queryString string, args ...s
 	result, err := connect.Query(queryString, arguments...)
 
 	if err != nil {
-		log.Printf("[QUERY] Query Error: %v\n", err)
-
-		return nil, err
+		return nil, fmt.Errorf("query select multiple rows error: %w", err)
 	}
 
 	defer connect.Close()
@@ -133,13 +126,11 @@ func (connect *DataBaseConnector) PgSelectSingle(queryString string, args ...str
 
 	result := connect.QueryRow(queryString, arguments...)
 
-	if result.Err() != nil {
-		log.Printf("[QUERY] Query Error: %v\n", result.Err())
-
-		return nil, result.Err()
-	}
-
 	defer connect.Close()
+
+	if result.Err() != nil {
+		return nil, fmt.Errorf("query single row error: %w", result.Err())
+	}
 
 	return result, nil
 }
@@ -165,8 +156,7 @@ func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []in
 	if returns != nil {
 		// Insert ID
 		if scanErr := queryResult.Scan(returns...); scanErr != nil {
-			log.Printf("[INSERT] Get Insert Result Scan Error: %v", scanErr)
-			return scanErr
+			return fmt.Errorf("scan returning values by insert: %w", scanErr)
 		}
 	}
 
@@ -192,17 +182,14 @@ func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...stri
 	defer connect.Close()
 
 	if queryErr != nil {
-		log.Printf("[UPDATE] Update Query Error: %v", queryErr)
-		return -999, queryErr
+		return -999, fmt.Errorf("exec query error: %w", queryErr)
 	}
 
 	// Insert ID
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		log.Printf("[UPDATE] Get Affected Rows Error: %v", afftedRowErr)
-
-		return -999, afftedRowErr
+		return -999, fmt.Errorf("get affected row error: %w", afftedRowErr)
 	}
 
 	return affectedRow, nil
@@ -227,17 +214,14 @@ func (connect *DataBaseConnector) PgDeleteQuery(queryString string, args ...stri
 	defer connect.Close()
 
 	if queryErr != nil {
-		log.Printf("[DELETE] Delete Query Error: %v", queryErr)
-		return -999, queryErr
+		return -999, fmt.Errorf("exec query error: %w", queryErr)
 	}
 
 	// Insert ID
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		log.Printf("[DELETE] Get Affected Rows Error: %v", afftedRowErr)
-
-		return -999, afftedRowErr
+		return -999, fmt.Errorf("get affected row error: %w", afftedRowErr)
 	}
 
 	return affectedRow, nil
@@ -254,11 +238,14 @@ func (connect *DataBaseConnector) PgInsertMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[INSERT_MULTIPLE] Begin Transaction Error: %v", txErr)
-		return []sql.Result{}, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[INSERT_MULTIPLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	var txResultList []sql.Result
 
@@ -266,19 +253,14 @@ func (connect *DataBaseConnector) PgInsertMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[INSERT_MULTIPLE] Insert Querystring Transaction Exec Error: %v", execErr)
-			return []sql.Result{}, execErr
+			return nil, fmt.Errorf("exec insert multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[INSERT_MULTIPLE] Commit Transaction Error: %v", commitErr)
-		return []sql.Result{}, commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -295,11 +277,14 @@ func (connect *DataBaseConnector) PgUpdateMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[UPDATE_MULTIPLE] Begin Transaction Error: %v", txErr)
-		return []sql.Result{}, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[UPDATE_MULTIPLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	var txResultList []sql.Result
 
@@ -307,19 +292,14 @@ func (connect *DataBaseConnector) PgUpdateMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[UPDATE_MULTIPLE] Update Querystring Transaction Exec Error: %v", execErr)
-			return []sql.Result{}, execErr
+			return nil, fmt.Errorf("exec update multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[UPDATE_MULTIPLE] Commit Transaction Error: %v", commitErr)
-		return []sql.Result{}, commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -336,11 +316,14 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[DELETE_MULTIPLE] Begin Transaction Error: %v", txErr)
-		return []sql.Result{}, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[DELETE_MULTIPLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	var txResultList []sql.Result
 
@@ -348,19 +331,14 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[DELETE_MULTIPLE] Delete Querystring Transaction Exec Error: %v", execErr)
-			return []sql.Result{}, execErr
+			return nil, fmt.Errorf("exec delete multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[DELETE_MULTIPLE] Commit Transaction Error: %v", commitErr)
-		return []sql.Result{}, commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
