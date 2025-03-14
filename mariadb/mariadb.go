@@ -53,6 +53,13 @@ func InitMariadbConnection(cfg MariadbConfig) (*MariaDbInstance, error) {
 	return connect, nil
 }
 
+/*
+Default Values
+
+Max Life Time: 60
+Max Idle Connections: 50
+Max Open Connections: 100
+*/
 func decideDefaultConfigs(cfg MariadbConfig) MariadbConfig {
 	if cfg.MaxLifeTime == 0 {
 		cfg.MaxLifeTime = 60 * time.Second
