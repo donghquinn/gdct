@@ -116,8 +116,14 @@ func (connect *PostgresInstance) CreateTable(queryList []string) error {
 	return nil
 }
 
-// 쿼리
-func (connect *PostgresInstance) QueryRows(queryString string, args ...string) (*sql.Rows, error) {
+/*
+Query Multiple Rows
+
+@queryString: Query String with prepared statement
+@args: Query Parameters
+@Return: Multiple Row Result
+*/
+func (connect *PostgresInstance) SelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
@@ -137,8 +143,14 @@ func (connect *PostgresInstance) QueryRows(queryString string, args ...string) (
 	return result, nil
 }
 
-// 쿼리
-func (connect *PostgresInstance) QueryOne(queryString string, args ...string) (*sql.Row, error) {
+/*
+Query Single Row
+
+@queryString: Query String with prepared statement
+@args: Query Parameters
+@Return: Single Row Result
+*/
+func (connect *PostgresInstance) SelectSingle(queryString string, args ...string) (*sql.Row, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
@@ -158,7 +170,13 @@ func (connect *PostgresInstance) QueryOne(queryString string, args ...string) (*
 	return result, nil
 }
 
-// 인서트 쿼리
+/*
+Insert Single Data
+
+@queryString: Query String with prepared statement
+@returns: Return Value by RETURNING <Column_name>;
+@args: Query Parameters
+*/
 func (connect *PostgresInstance) InsertQuery(queryString string, returns []interface{}, args ...string) error {
 	var arguments []interface{}
 
@@ -181,56 +199,195 @@ func (connect *PostgresInstance) InsertQuery(queryString string, returns []inter
 	return nil
 }
 
-// 인서트 쿼리
-func (connect *PostgresInstance) UpdateQuery(queryString string, returns []interface{}, args ...string) error {
+/*
+Update Single Data
+
+@ queryString: Query String with prepared statement
+@ args: Query Parameters
+@ Return: Affected Rows
+*/
+func (connect *PostgresInstance) UpdateQuery(queryString string, args ...string) (int64, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
 		arguments = append(arguments, arg)
 	}
 
-	_, queryErr := connect.conn.Exec(queryString, arguments...)
+	updateResult, queryErr := connect.conn.Exec(queryString, arguments...)
 
 	defer connect.conn.Close()
 
 	if queryErr != nil {
-		// Insert ID
-
-		log.Printf("[INSERT] Get Update Error: %v", queryErr)
-		return queryErr
+		log.Printf("[UPDATE] Update Query Error: %v", queryErr)
+		return -999, queryErr
 	}
 
-	return nil
+	// Insert ID
+	affectedRow, afftedRowErr := updateResult.RowsAffected()
+
+	if afftedRowErr != nil {
+		log.Printf("[UPDATE] Get Affected Rows Error: %v", afftedRowErr)
+
+		return -999, afftedRowErr
+	}
+
+	return affectedRow, nil
 }
 
-func (connect *PostgresInstance) InsertMultiple(queryList []string) error {
+/*
+DELETE Single Data
+
+@ queryString: Query String with prepared statement
+@ args: Query Parameters
+@ Return: Affected Rows
+*/
+func (connect *PostgresInstance) DeleteQuery(queryString string, args ...string) (int64, error) {
+	var arguments []interface{}
+
+	for _, arg := range args {
+		arguments = append(arguments, arg)
+	}
+
+	updateResult, queryErr := connect.conn.Exec(queryString, arguments...)
+
+	defer connect.conn.Close()
+
+	if queryErr != nil {
+		log.Printf("[DELETE] Delete Query Error: %v", queryErr)
+		return -999, queryErr
+	}
+
+	// Insert ID
+	affectedRow, afftedRowErr := updateResult.RowsAffected()
+
+	if afftedRowErr != nil {
+		log.Printf("[DELETE] Get Affected Rows Error: %v", afftedRowErr)
+
+		return -999, afftedRowErr
+	}
+
+	return affectedRow, nil
+}
+
+/*
+INSERT Multiple Data with DB Transaction
+
+@ queryString: Query String with prepared statement
+*/
+func (connect *PostgresInstance) InsertMultiple(queryList []string) ([]sql.Result, error) {
 	ctx := context.Background()
 
 	tx, txErr := connect.conn.Begin()
 
 	if txErr != nil {
 		log.Printf("[INSERT_MULTIPLE] Begin Transaction Error: %v", txErr)
-		return txErr
+		return []sql.Result{}, txErr
 	}
 
 	defer tx.Rollback()
 
+	var txResultList []sql.Result
+
 	for _, queryString := range queryList {
-		_, execErr := tx.ExecContext(ctx, queryString)
+		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
 			tx.Rollback()
 			log.Printf("[INSERT_MULTIPLE] Insert Querystring Transaction Exec Error: %v", execErr)
-			return execErr
+			return []sql.Result{}, execErr
 		}
+
+		txResultList = append(txResultList, txResult)
 	}
 
 	commitErr := tx.Commit()
 
 	if commitErr != nil {
 		log.Printf("[INSERT_MULTIPLE] Commit Transaction Error: %v", commitErr)
-		return commitErr
+		return []sql.Result{}, commitErr
 	}
 
-	return nil
+	return txResultList, nil
+}
+
+/*
+UPDATE Multiple Data with DB Transaction
+
+@ queryString: Query String with prepared statement
+*/
+func (connect *PostgresInstance) UpdateMultiple(queryList []string) ([]sql.Result, error) {
+	ctx := context.Background()
+
+	tx, txErr := connect.conn.Begin()
+
+	if txErr != nil {
+		log.Printf("[UPDATE_MULTIPLE] Begin Transaction Error: %v", txErr)
+		return []sql.Result{}, txErr
+	}
+
+	defer tx.Rollback()
+
+	var txResultList []sql.Result
+
+	for _, queryString := range queryList {
+		txResult, execErr := tx.ExecContext(ctx, queryString)
+
+		if execErr != nil {
+			tx.Rollback()
+			log.Printf("[UPDATE_MULTIPLE] Update Querystring Transaction Exec Error: %v", execErr)
+			return []sql.Result{}, execErr
+		}
+
+		txResultList = append(txResultList, txResult)
+	}
+
+	commitErr := tx.Commit()
+
+	if commitErr != nil {
+		log.Printf("[UPDATE_MULTIPLE] Commit Transaction Error: %v", commitErr)
+		return []sql.Result{}, commitErr
+	}
+
+	return txResultList, nil
+}
+
+/*
+DELETE Multiple Data with DB Transaction
+
+@ queryString: Query String with prepared statement
+*/
+func (connect *PostgresInstance) DeleteMultiple(queryList []string) ([]sql.Result, error) {
+	ctx := context.Background()
+
+	tx, txErr := connect.conn.Begin()
+
+	if txErr != nil {
+		log.Printf("[UPDATE_MULTIPLE] Begin Transaction Error: %v", txErr)
+		return []sql.Result{}, txErr
+	}
+
+	defer tx.Rollback()
+
+	var txResultList []sql.Result
+
+	for _, queryString := range queryList {
+		txResult, execErr := tx.ExecContext(ctx, queryString)
+
+		if execErr != nil {
+			tx.Rollback()
+			log.Printf("[UPDATE_MULTIPLE] Update Querystring Transaction Exec Error: %v", execErr)
+			return []sql.Result{}, execErr
+		}
+
+		txResultList = append(txResultList, txResult)
+	}
+
+	commitErr := tx.Commit()
+
+	if commitErr != nil {
+		log.Printf("[UPDATE_MULTIPLE] Commit Transaction Error: %v", commitErr)
+		return []sql.Result{}, commitErr
+	}
+
+	return txResultList, nil
 }

@@ -233,7 +233,6 @@ func (connect *MariaDbInstance) UpdateQuery(queryString string, args ...string) 
 
 	defer connect.conn.Close()
 
-	// Insert ID
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
 
 	if afftedRowErr != nil {
