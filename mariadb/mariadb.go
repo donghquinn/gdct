@@ -25,7 +25,7 @@ type MariaDbInstance struct {
 	conn *sql.DB
 }
 
-// DB 연결 인스턴스
+// Initiate Mariadb Connection
 func InitMariadbConnection(cfg MariadbConfig) (*MariaDbInstance, error) {
 	dbUrl := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
 		cfg.UserName,
