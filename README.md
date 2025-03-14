@@ -2,7 +2,7 @@
 
 ## Introduction
 * It's Database Client Package
-* It provides creating connection pool, queries, and graceful shutdown
+<!-- * It provides creating connection pool, queries, and graceful shutdown -->
 
 ## Dependencies
 * It depends on postgres and mysql driver
