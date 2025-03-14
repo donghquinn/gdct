@@ -31,6 +31,7 @@ go get github.com/donghquinn/gdct
 
 * Every  Single Method will close connection after transaction commited.
 * So you have to open connection again for every time.
+* Postgres start with Pg and Mariadb start with Mr
 
 ### Mariadb / mysql
 
