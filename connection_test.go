@@ -13,6 +13,7 @@ func TestCheckPostTest(t *testing.T) {
 		UserName: "its",
 		Password: "1234",
 		Database: "its",
+		SslMode:  "disable",
 	})
 
 	if connErr != nil {

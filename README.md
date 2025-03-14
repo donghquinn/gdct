@@ -75,6 +75,7 @@ func main() {
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
+        SslMode: "disable",
         MaxLifeTime: 600,
         MaxIdleConns: 50,
         MaxOpenConns: 10
