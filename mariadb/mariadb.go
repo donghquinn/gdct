@@ -197,7 +197,7 @@ Update Single Data
 
 @queryString: Query String with prepared statement
 @args: Query Parameters
-@Return: Insert ID
+@Return: Affected Rows
 */
 func (connect *DataBaseConnector) UpdateQuery(queryString string, args ...string) (int64, error) {
 	var arguments []interface{}
@@ -233,7 +233,7 @@ Delete Single Data
 
 @queryString: Query String with prepared statement
 @args: Query Parameters
-@Return: Insert ID
+@Return: Affected Rows
 */
 func (connect *DataBaseConnector) DeleteQuery(queryString string, args ...string) (int64, error) {
 	var arguments []interface{}
