@@ -7,13 +7,17 @@ import (
 )
 
 func CheckPostTest(t *testing.T) {
-	conn, _ := gdct.InitConnection("postgres", gdct.DBConfig{
+	conn, connErr := gdct.InitConnection("postgres", gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     5432,
 		UserName: "its",
 		Password: "1234",
 		Database: "its",
 	})
+
+	if connErr != nil {
+		t.Fatalf("[POST_CHECK] Create Connection Test Error: %v", connErr)
+	}
 
 	pingErr := conn.PgCheckConnection()
 	if pingErr != nil {
@@ -22,13 +26,17 @@ func CheckPostTest(t *testing.T) {
 }
 
 func CheckMariaTest(t *testing.T) {
-	conn, _ := gdct.InitConnection("mariadb", gdct.DBConfig{
+	conn, connErr := gdct.InitConnection("mariadb", gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     3306,
 		UserName: "its",
 		Password: "1234",
 		Database: "its",
 	})
+
+	if connErr != nil {
+		t.Fatalf("[MARIA_CHECK] Create Connection Test Error: %v", connErr)
+	}
 
 	pingErr := conn.MrCheckConnection()
 	if pingErr != nil {
@@ -37,13 +45,17 @@ func CheckMariaTest(t *testing.T) {
 }
 
 func CheckMysqlTest(t *testing.T) {
-	conn, _ := gdct.InitConnection("mysql", gdct.DBConfig{
+	conn, connErr := gdct.InitConnection("mysql", gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     3306,
 		UserName: "its",
 		Password: "1234",
 		Database: "its",
 	})
+
+	if connErr != nil {
+		t.Fatalf("[MYSQL_CHECK] Create Connection Test Error: %v", connErr)
+	}
 
 	pingErr := conn.MrCheckConnection()
 	if pingErr != nil {
