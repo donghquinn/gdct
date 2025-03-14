@@ -249,3 +249,126 @@ func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...stri
 
 	return affectedRow, nil
 }
+
+/*
+INSERT Multiple Data with DB Transaction
+
+@ queryString: Query String with prepared statement
+*/
+func (connect *DataBaseConnector) MrInsertMultiple(queryList []string) ([]sql.Result, error) {
+	ctx := context.Background()
+
+	tx, txErr := connect.Begin()
+
+	if txErr != nil {
+		log.Printf("[INSERT_MULTIPLE] Begin Transaction Error: %v", txErr)
+		return []sql.Result{}, txErr
+	}
+
+	defer tx.Rollback()
+
+	var txResultList []sql.Result
+
+	for _, queryString := range queryList {
+		txResult, execErr := tx.ExecContext(ctx, queryString)
+
+		if execErr != nil {
+			tx.Rollback()
+			log.Printf("[INSERT_MULTIPLE] Insert Querystring Transaction Exec Error: %v", execErr)
+			return []sql.Result{}, execErr
+		}
+
+		txResultList = append(txResultList, txResult)
+	}
+
+	commitErr := tx.Commit()
+
+	if commitErr != nil {
+		log.Printf("[INSERT_MULTIPLE] Commit Transaction Error: %v", commitErr)
+		return []sql.Result{}, commitErr
+	}
+
+	return txResultList, nil
+}
+
+/*
+UPDATE Multiple Data with DB Transaction
+
+@ queryString: Query String with prepared statement
+*/
+func (connect *DataBaseConnector) MrUpdateMultiple(queryList []string) ([]sql.Result, error) {
+	ctx := context.Background()
+
+	tx, txErr := connect.Begin()
+
+	if txErr != nil {
+		log.Printf("[UPDATE_MULTIPLE] Begin Transaction Error: %v", txErr)
+		return []sql.Result{}, txErr
+	}
+
+	defer tx.Rollback()
+
+	var txResultList []sql.Result
+
+	for _, queryString := range queryList {
+		txResult, execErr := tx.ExecContext(ctx, queryString)
+
+		if execErr != nil {
+			tx.Rollback()
+			log.Printf("[UPDATE_MULTIPLE] Update Querystring Transaction Exec Error: %v", execErr)
+			return []sql.Result{}, execErr
+		}
+
+		txResultList = append(txResultList, txResult)
+	}
+
+	commitErr := tx.Commit()
+
+	if commitErr != nil {
+		log.Printf("[UPDATE_MULTIPLE] Commit Transaction Error: %v", commitErr)
+		return []sql.Result{}, commitErr
+	}
+
+	return txResultList, nil
+}
+
+/*
+DELETE Multiple Data with DB Transaction
+
+@ queryString: Query String with prepared statement
+*/
+func (connect *DataBaseConnector) MrDeleteMultiple(queryList []string) ([]sql.Result, error) {
+	ctx := context.Background()
+
+	tx, txErr := connect.Begin()
+
+	if txErr != nil {
+		log.Printf("[DELETE_MULTIPLE] Begin Transaction Error: %v", txErr)
+		return []sql.Result{}, txErr
+	}
+
+	defer tx.Rollback()
+
+	var txResultList []sql.Result
+
+	for _, queryString := range queryList {
+		txResult, execErr := tx.ExecContext(ctx, queryString)
+
+		if execErr != nil {
+			tx.Rollback()
+			log.Printf("[DELETE_MULTIPLE] Delete Querystring Transaction Exec Error: %v", execErr)
+			return []sql.Result{}, execErr
+		}
+
+		txResultList = append(txResultList, txResult)
+	}
+
+	commitErr := tx.Commit()
+
+	if commitErr != nil {
+		log.Printf("[DELETE_MULTIPLE] Commit Transaction Error: %v", commitErr)
+		return []sql.Result{}, commitErr
+	}
+
+	return txResultList, nil
+}

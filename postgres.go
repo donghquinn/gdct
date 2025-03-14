@@ -335,7 +335,7 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[UPDATE_MULTIPLE] Begin Transaction Error: %v", txErr)
+		log.Printf("[DELETE_MULTIPLE] Begin Transaction Error: %v", txErr)
 		return []sql.Result{}, txErr
 	}
 
@@ -348,7 +348,7 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 
 		if execErr != nil {
 			tx.Rollback()
-			log.Printf("[UPDATE_MULTIPLE] Update Querystring Transaction Exec Error: %v", execErr)
+			log.Printf("[DELETE_MULTIPLE] Delete Querystring Transaction Exec Error: %v", execErr)
 			return []sql.Result{}, execErr
 		}
 
@@ -358,7 +358,7 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 	commitErr := tx.Commit()
 
 	if commitErr != nil {
-		log.Printf("[UPDATE_MULTIPLE] Commit Transaction Error: %v", commitErr)
+		log.Printf("[DELETE_MULTIPLE] Commit Transaction Error: %v", commitErr)
 		return []sql.Result{}, commitErr
 	}
 
