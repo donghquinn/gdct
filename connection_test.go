@@ -6,7 +6,7 @@ import (
 	"github.com/donghquinn/gdct"
 )
 
-func CheckPostTest(t *testing.T) {
+func TestCheckPostTest(t *testing.T) {
 	conn, connErr := gdct.InitConnection("postgres", gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     5432,
@@ -25,7 +25,7 @@ func CheckPostTest(t *testing.T) {
 	}
 }
 
-func CheckMariaTest(t *testing.T) {
+func TestCheckMariaTest(t *testing.T) {
 	conn, connErr := gdct.InitConnection("mariadb", gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     3306,
@@ -44,7 +44,7 @@ func CheckMariaTest(t *testing.T) {
 	}
 }
 
-func CheckMysqlTest(t *testing.T) {
+func TestCheckMysqlTest(t *testing.T) {
 	conn, connErr := gdct.InitConnection("mysql", gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     3306,
