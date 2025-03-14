@@ -63,27 +63,25 @@ func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[CREATE_TABLE] Begin Transaction Error: %v", txErr)
 		return txErr
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[CREATE_TABLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	for _, queryString := range queryList {
 		_, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[CREATE_TABLE] Create Table Querystring Transaction Exec Error: %v", execErr)
 			return execErr
 		}
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[CREATE_TABLE] Commit Transaction Error: %v", commitErr)
-		return commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return nil
@@ -105,13 +103,11 @@ func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...s
 
 	result, err := connect.Query(queryString, arguments...)
 
-	if err != nil {
-		log.Printf("[QUERY] Query Error: %v\n", err)
+	defer connect.Close()
 
+	if err != nil {
 		return nil, err
 	}
-
-	defer connect.Close()
 
 	return result, nil
 }
@@ -132,13 +128,11 @@ func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...str
 
 	result := connect.QueryRow(queryString, arguments...)
 
-	if result.Err() != nil {
-		log.Printf("[QUERY] Query Error: %v\n", result.Err())
+	defer connect.Close()
 
+	if result.Err() != nil {
 		return nil, result.Err()
 	}
-
-	defer connect.Close()
 
 	return result, nil
 }
@@ -160,8 +154,6 @@ func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...stri
 	insertResult, insertErr := connect.Exec(queryString, arguments...)
 
 	if insertErr != nil {
-		log.Printf("[INSERT] Insert Query Err: %v", insertErr)
-
 		return -99999, insertErr
 	}
 
@@ -171,8 +163,6 @@ func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...stri
 	insertId, insertIdErr := insertResult.LastInsertId()
 
 	if insertIdErr != nil {
-		log.Printf("[INSERT] Get Insert ID Error: %v", insertIdErr)
-
 		return -999999, insertIdErr
 	}
 
@@ -196,8 +186,6 @@ func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...stri
 	updateResult, updateErr := connect.Exec(queryString, arguments...)
 
 	if updateErr != nil {
-		log.Printf("[UPDATE] Update Query Err: %v", updateErr)
-
 		return -99999, updateErr
 	}
 
@@ -206,8 +194,6 @@ func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...stri
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		log.Printf("[UPDATE] Get Affected Rows Error: %v", afftedRowErr)
-
 		return -999999, afftedRowErr
 	}
 
@@ -231,8 +217,6 @@ func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...stri
 	delResult, delErr := connect.Exec(queryString, arguments...)
 
 	if delErr != nil {
-		log.Printf("[DELETE] Delete Query Err: %v", delErr)
-
 		return -99999, delErr
 	}
 
@@ -242,8 +226,6 @@ func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...stri
 	affectedRow, afftedRowErr := delResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		log.Printf("[DELETE] Get Affected Numbers Error: %v", afftedRowErr)
-
 		return -999999, afftedRowErr
 	}
 
@@ -261,11 +243,14 @@ func (connect *DataBaseConnector) MrInsertMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[INSERT_MULTIPLE] Begin Transaction Error: %v", txErr)
-		return []sql.Result{}, txErr
+		return nil, txErr
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[INSERT_MULTIPLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	var txResultList []sql.Result
 
@@ -273,19 +258,14 @@ func (connect *DataBaseConnector) MrInsertMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[INSERT_MULTIPLE] Insert Querystring Transaction Exec Error: %v", execErr)
-			return []sql.Result{}, execErr
+			return nil, execErr
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[INSERT_MULTIPLE] Commit Transaction Error: %v", commitErr)
-		return []sql.Result{}, commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -302,11 +282,14 @@ func (connect *DataBaseConnector) MrUpdateMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[UPDATE_MULTIPLE] Begin Transaction Error: %v", txErr)
-		return []sql.Result{}, txErr
+		return nil, txErr
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[UPDATE_MULTIPLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	var txResultList []sql.Result
 
@@ -314,19 +297,14 @@ func (connect *DataBaseConnector) MrUpdateMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[UPDATE_MULTIPLE] Update Querystring Transaction Exec Error: %v", execErr)
-			return []sql.Result{}, execErr
+			return nil, execErr
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[UPDATE_MULTIPLE] Commit Transaction Error: %v", commitErr)
-		return []sql.Result{}, commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -343,11 +321,14 @@ func (connect *DataBaseConnector) MrDeleteMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		log.Printf("[DELETE_MULTIPLE] Begin Transaction Error: %v", txErr)
-		return []sql.Result{}, txErr
+		return nil, txErr
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
+			log.Printf("[DELETE_MULTIPLE] Transaction rollback error: %v", txErr)
+		}
+	}()
 
 	var txResultList []sql.Result
 
@@ -355,19 +336,14 @@ func (connect *DataBaseConnector) MrDeleteMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			tx.Rollback()
-			log.Printf("[DELETE_MULTIPLE] Delete Querystring Transaction Exec Error: %v", execErr)
-			return []sql.Result{}, execErr
+			return nil, execErr
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
-	commitErr := tx.Commit()
-
-	if commitErr != nil {
-		log.Printf("[DELETE_MULTIPLE] Commit Transaction Error: %v", commitErr)
-		return []sql.Result{}, commitErr
+	if commitErr := tx.Commit(); commitErr != nil {
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
