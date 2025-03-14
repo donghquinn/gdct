@@ -28,11 +28,14 @@ func TestCheckPostTest(t *testing.T) {
 
 func TestCheckMariaTest(t *testing.T) {
 	conn, connErr := gdct.InitConnection("mariadb", gdct.DBConfig{
-		Host:     "192.168.0.241",
-		Port:     3306,
-		UserName: "its",
-		Password: "1234",
-		Database: "its",
+		Host:         "192.168.0.241",
+		Port:         3306,
+		UserName:     "its",
+		Password:     "1234",
+		Database:     "its",
+		MaxLifeTime:  600,
+		MaxIdleConns: 10,
+		MaxOpenConns: 50,
 	})
 
 	if connErr != nil {
