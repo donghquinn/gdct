@@ -67,15 +67,17 @@ func decideDefaultConfigs(cfg MariadbConfig) MariadbConfig {
 	return cfg
 }
 
-// 테이블 생성
+/*
+Check Connection
+*/
 func (connect *PostgresInstance) CheckPostgresConnection() error {
-	log.Printf("Waiting for Database Connection,,,")
-	time.Sleep(time.Second * 10)
+	// log.Printf("Waiting for Database Connection,,,")
+	// time.Sleep(time.Second * 10)
 
 	pingErr := connect.conn.Ping()
 
 	if pingErr != nil {
-		log.Printf("[DATABASE] Database Ping Error: %v", pingErr)
+		log.Printf("[CHECK] Database Ping Error: %v", pingErr)
 		return pingErr
 	}
 

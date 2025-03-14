@@ -100,17 +100,15 @@ func (connect *MariaDbInstance) CreateTable(queryList []string) error {
 
 /*
 Check Connection
-
-Check Connections
 */
 func (connect *MariaDbInstance) CheckConnection() error {
-	log.Printf("Waiting for Database Connection,,,")
-	time.Sleep(time.Second * 10)
+	// log.Printf("Waiting for Database Connection,,,")
+	// time.Sleep(time.Second * 10)
 
 	pingErr := connect.conn.Ping()
 
 	if pingErr != nil {
-		log.Printf("[CONNECTION] Database Ping Error: %v", pingErr)
+		log.Printf("[CHECK] Database Ping Error: %v", pingErr)
 		return pingErr
 	}
 
@@ -126,7 +124,7 @@ Query Multiple Rows
 @args: Query Parameters
 @Return: Multiple Row Result
 */
-func (connect *MariaDbInstance) QueryMultiple(queryString string, args ...string) (*sql.Rows, error) {
+func (connect *MariaDbInstance) SelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
@@ -153,7 +151,7 @@ Query Single Row
 @args: Query Parameters
 @Return: Single Row Result
 */
-func (connect *MariaDbInstance) QuerySingle(queryString string, args ...string) (*sql.Row, error) {
+func (connect *MariaDbInstance) SelectSingle(queryString string, args ...string) (*sql.Row, error) {
 	var arguments []interface{}
 
 	for _, arg := range args {
