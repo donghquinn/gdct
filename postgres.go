@@ -71,9 +71,7 @@ func (connect *DataBaseConnector) PgCreateTable(queryList []string) error {
 	}()
 
 	for _, queryString := range queryList {
-		_, execErr := tx.ExecContext(ctx, queryString)
-
-		if execErr != nil {
+		if _, execErr := tx.ExecContext(ctx, queryString); execErr != nil {
 			return fmt.Errorf("exec transaction context error: %w", execErr)
 		}
 	}
