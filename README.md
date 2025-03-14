@@ -52,7 +52,7 @@ func main() {
         MaxOpenConns: 10
     })
 
-    pingErr := conn.MrCreateTable()
+    pingErr := conn.MrCheckConnection()
 
     // ...
 }
