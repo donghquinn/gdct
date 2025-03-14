@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type MariadbConfig struct {
+type PostgresConfig struct {
 	UserName     string
 	Password     string
 	Host         string
@@ -26,7 +26,7 @@ type PostgresInstance struct {
 }
 
 // DB 연결 인스턴스
-func InitPostgresConnection(cfg MariadbConfig) (*PostgresInstance, error) {
+func InitPostgresConnection(cfg PostgresConfig) (*PostgresInstance, error) {
 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.UserName,
 		cfg.Password,
@@ -54,7 +54,7 @@ func InitPostgresConnection(cfg MariadbConfig) (*PostgresInstance, error) {
 	return connect, nil
 }
 
-func decideDefaultConfigs(cfg MariadbConfig) MariadbConfig {
+func decideDefaultConfigs(cfg PostgresConfig) PostgresConfig {
 	if cfg.MaxLifeTime == 0 {
 		cfg.MaxLifeTime = 60 * time.Second
 	}
