@@ -81,7 +81,7 @@ func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return fmt.Errorf("commit transaction error: %w", commitErr)
+		return commitErr
 	}
 
 	return nil
@@ -265,7 +265,7 @@ func (connect *DataBaseConnector) MrInsertMultiple(queryList []string) ([]sql.Re
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
+		return nil, commitErr
 	}
 
 	return txResultList, nil
@@ -304,7 +304,7 @@ func (connect *DataBaseConnector) MrUpdateMultiple(queryList []string) ([]sql.Re
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
+		return nil, commitErr
 	}
 
 	return txResultList, nil
@@ -343,7 +343,7 @@ func (connect *DataBaseConnector) MrDeleteMultiple(queryList []string) ([]sql.Re
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
+		return nil, commitErr
 	}
 
 	return txResultList, nil

@@ -79,7 +79,7 @@ func (connect *DataBaseConnector) PgCreateTable(queryList []string) error {
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return fmt.Errorf("commit transaction error: %w", commitErr)
+		return commitErr
 	}
 
 	return nil
@@ -260,7 +260,7 @@ func (connect *DataBaseConnector) PgInsertMultiple(queryList []string) ([]sql.Re
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
+		return nil, commitErr
 	}
 
 	return txResultList, nil
@@ -299,7 +299,7 @@ func (connect *DataBaseConnector) PgUpdateMultiple(queryList []string) ([]sql.Re
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
+		return nil, commitErr
 	}
 
 	return txResultList, nil
@@ -338,7 +338,7 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
+		return nil, commitErr
 	}
 
 	return txResultList, nil
