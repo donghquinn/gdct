@@ -29,6 +29,9 @@ go get github.com/donghquinn/gdct
 
 ## Usage
 
+* Every  Single Method will close connection after transaction commited.
+* So you have to open connection again for every time.
+
 ### Mariadb / mysql
 
 ```go
