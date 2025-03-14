@@ -11,11 +11,11 @@ import (
 
 // Initiate Mariadb Connection
 func InitMariadbConnection(cfg DBConfig) (*DataBaseConnector, error) {
-	dbUrl := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+	dbUrl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		cfg.UserName,
 		cfg.Password,
 		cfg.Host,
-		cfg.Password,
+		cfg.Port,
 		cfg.Database,
 	)
 

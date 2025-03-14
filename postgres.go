@@ -11,11 +11,11 @@ import (
 
 // DB 연결 인스턴스
 func InitPostgresConnection(cfg DBConfig) (*DataBaseConnector, error) {
-	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		cfg.UserName,
 		cfg.Password,
 		cfg.Host,
-		cfg.Password,
+		cfg.Port,
 		cfg.Database,
 	)
 
