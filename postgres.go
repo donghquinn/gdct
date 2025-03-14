@@ -61,7 +61,7 @@ func (connect *DataBaseConnector) PgCreateTable(queryList []string) error {
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return txErr
+		return fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -74,12 +74,12 @@ func (connect *DataBaseConnector) PgCreateTable(queryList []string) error {
 		_, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return execErr
+			return fmt.Errorf("exec transaction context error: %w", execErr)
 		}
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return commitErr
+		return fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return nil
@@ -102,7 +102,7 @@ func (connect *DataBaseConnector) PgSelectMultiple(queryString string, args ...s
 	result, err := connect.Query(queryString, arguments...)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query select multiple rows error: %w", err)
 	}
 
 	defer connect.Close()
@@ -129,7 +129,7 @@ func (connect *DataBaseConnector) PgSelectSingle(queryString string, args ...str
 	defer connect.Close()
 
 	if result.Err() != nil {
-		return nil, result.Err()
+		return nil, fmt.Errorf("query single row error: %w", result.Err())
 	}
 
 	return result, nil
@@ -156,7 +156,7 @@ func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []in
 	if returns != nil {
 		// Insert ID
 		if scanErr := queryResult.Scan(returns...); scanErr != nil {
-			return scanErr
+			return fmt.Errorf("scan returning values by insert: %w", scanErr)
 		}
 	}
 
@@ -182,14 +182,14 @@ func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...stri
 	defer connect.Close()
 
 	if queryErr != nil {
-		return -999, queryErr
+		return -999, fmt.Errorf("exec query error: %w", queryErr)
 	}
 
 	// Insert ID
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		return -999, afftedRowErr
+		return -999, fmt.Errorf("get affected row error: %w", afftedRowErr)
 	}
 
 	return affectedRow, nil
@@ -214,14 +214,14 @@ func (connect *DataBaseConnector) PgDeleteQuery(queryString string, args ...stri
 	defer connect.Close()
 
 	if queryErr != nil {
-		return -999, queryErr
+		return -999, fmt.Errorf("exec query error: %w", queryErr)
 	}
 
 	// Insert ID
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		return -999, afftedRowErr
+		return -999, fmt.Errorf("get affected row error: %w", afftedRowErr)
 	}
 
 	return affectedRow, nil
@@ -238,7 +238,7 @@ func (connect *DataBaseConnector) PgInsertMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -253,14 +253,14 @@ func (connect *DataBaseConnector) PgInsertMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return nil, execErr
+			return nil, fmt.Errorf("exec insert multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, commitErr
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -277,7 +277,7 @@ func (connect *DataBaseConnector) PgUpdateMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -292,14 +292,14 @@ func (connect *DataBaseConnector) PgUpdateMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return nil, execErr
+			return nil, fmt.Errorf("exec update multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, commitErr
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -316,7 +316,7 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -331,14 +331,14 @@ func (connect *DataBaseConnector) PgDeleteMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return nil, execErr
+			return nil, fmt.Errorf("exec delete multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, commitErr
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil

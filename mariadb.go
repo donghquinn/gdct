@@ -48,7 +48,6 @@ func (connect *DataBaseConnector) MrCheckConnection() error {
 	pingErr := connect.Ping()
 
 	if pingErr != nil {
-		log.Printf("[CHECK] Database Ping Error: %v", pingErr)
 		return pingErr
 	}
 
@@ -63,7 +62,7 @@ func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return txErr
+		return fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -76,12 +75,12 @@ func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 		_, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return execErr
+			return fmt.Errorf("exec transaction context error: %w", execErr)
 		}
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return commitErr
+		return fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return nil
@@ -106,7 +105,7 @@ func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...s
 	defer connect.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query select multiple rows error: %w", err)
 	}
 
 	return result, nil
@@ -131,7 +130,7 @@ func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...str
 	defer connect.Close()
 
 	if result.Err() != nil {
-		return nil, result.Err()
+		return nil, fmt.Errorf("query single row error: %w", result.Err())
 	}
 
 	return result, nil
@@ -154,7 +153,7 @@ func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...stri
 	insertResult, insertErr := connect.Exec(queryString, arguments...)
 
 	if insertErr != nil {
-		return -99999, insertErr
+		return -99999, fmt.Errorf("exec insert query error: %w", insertErr)
 	}
 
 	defer connect.Close()
@@ -163,7 +162,7 @@ func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...stri
 	insertId, insertIdErr := insertResult.LastInsertId()
 
 	if insertIdErr != nil {
-		return -999999, insertIdErr
+		return -999999, fmt.Errorf("scan returning values by insert: %w", insertIdErr)
 	}
 
 	return insertId, nil
@@ -186,7 +185,7 @@ func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...stri
 	updateResult, updateErr := connect.Exec(queryString, arguments...)
 
 	if updateErr != nil {
-		return -99999, updateErr
+		return -99999, fmt.Errorf("exec update query error: %w", updateErr)
 	}
 
 	defer connect.Close()
@@ -194,7 +193,7 @@ func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...stri
 	affectedRow, afftedRowErr := updateResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		return -999999, afftedRowErr
+		return -999999, fmt.Errorf("get affected rows error: %w", afftedRowErr)
 	}
 
 	return affectedRow, nil
@@ -217,7 +216,7 @@ func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...stri
 	delResult, delErr := connect.Exec(queryString, arguments...)
 
 	if delErr != nil {
-		return -99999, delErr
+		return -99999, fmt.Errorf("exec delete query error: %w", delErr)
 	}
 
 	defer connect.Close()
@@ -226,7 +225,7 @@ func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...stri
 	affectedRow, afftedRowErr := delResult.RowsAffected()
 
 	if afftedRowErr != nil {
-		return -999999, afftedRowErr
+		return -999999, fmt.Errorf("get affected rows error: %w", afftedRowErr)
 	}
 
 	return affectedRow, nil
@@ -243,7 +242,7 @@ func (connect *DataBaseConnector) MrInsertMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -258,14 +257,14 @@ func (connect *DataBaseConnector) MrInsertMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return nil, execErr
+			return nil, fmt.Errorf("exec insert multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, commitErr
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -282,7 +281,7 @@ func (connect *DataBaseConnector) MrUpdateMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -297,14 +296,14 @@ func (connect *DataBaseConnector) MrUpdateMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return nil, execErr
+			return nil, fmt.Errorf("exec update multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, commitErr
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
@@ -321,7 +320,7 @@ func (connect *DataBaseConnector) MrDeleteMultiple(queryList []string) ([]sql.Re
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, txErr
+		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -336,14 +335,14 @@ func (connect *DataBaseConnector) MrDeleteMultiple(queryList []string) ([]sql.Re
 		txResult, execErr := tx.ExecContext(ctx, queryString)
 
 		if execErr != nil {
-			return nil, execErr
+			return nil, fmt.Errorf("exec delete multiple transaction context error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return nil, commitErr
+		return nil, fmt.Errorf("commit transaction error: %w", commitErr)
 	}
 
 	return txResultList, nil
