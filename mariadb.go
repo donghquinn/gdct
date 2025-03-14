@@ -22,9 +22,7 @@ func InitMariadbConnection(cfg DBConfig) (*DataBaseConnector, error) {
 	db, err := sql.Open("mysql", dbUrl)
 
 	if err != nil {
-		log.Printf("[INIT] Start Database Connection Error: %v", err)
-
-		return nil, err
+		return nil, fmt.Errorf("postgres open connection error: %w", err)
 	}
 
 	cfg = decideDefaultConfigs(cfg)
@@ -48,7 +46,7 @@ func (connect *DataBaseConnector) MrCheckConnection() error {
 	pingErr := connect.Ping()
 
 	if pingErr != nil {
-		return pingErr
+		return fmt.Errorf("postgres ping error: %w", pingErr)
 	}
 
 	defer connect.Close()
