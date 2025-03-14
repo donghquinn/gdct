@@ -5,7 +5,7 @@
 * It provides creating connection pool, queries, and graceful shutdown
 
 ## Dependencies
-* It depend on postgres and mysql driver
+* It depends on postgres and mysql driver
 
 ### Postgres
 ```zsh
