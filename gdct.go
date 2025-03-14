@@ -30,7 +30,6 @@ type DataBaseConnector struct {
 	*sql.DB
 }
 
-// InitConnection: DBConfig에 따라 알맞은 connection pool 생성
 func InitConnection(dbType DBType, cfg DBConfig) (*DataBaseConnector, error) {
 	switch dbType {
 	case MariaDB:
