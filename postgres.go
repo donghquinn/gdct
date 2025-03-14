@@ -71,9 +71,7 @@ func (connect *DataBaseConnector) PgCreateTable(queryList []string) error {
 	}()
 
 	for _, queryString := range queryList {
-		_, execErr := tx.ExecContext(ctx, queryString)
-
-		if execErr != nil {
+		if _, execErr := tx.ExecContext(ctx, queryString); execErr != nil {
 			return fmt.Errorf("exec transaction context error: %w", execErr)
 		}
 	}
@@ -93,11 +91,7 @@ Query Multiple Rows
 @Return: Multiple Row Result
 */
 func (connect *DataBaseConnector) PgSelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	result, err := connect.Query(queryString, arguments...)
 
@@ -118,11 +112,7 @@ Query Single Row
 @Return: Single Row Result
 */
 func (connect *DataBaseConnector) PgSelectSingle(queryString string, args ...string) (*sql.Row, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	result := connect.QueryRow(queryString, arguments...)
 
@@ -143,11 +133,7 @@ Insert Single Data
 @args: Query Parameters
 */
 func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []interface{}, args ...string) error {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	queryResult := connect.QueryRow(queryString, arguments...)
 
@@ -171,11 +157,7 @@ Update Single Data
 @ Return: Affected Rows
 */
 func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...string) (int64, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	updateResult, queryErr := connect.Exec(queryString, arguments...)
 
@@ -203,11 +185,7 @@ DELETE Single Data
 @ Return: Affected Rows
 */
 func (connect *DataBaseConnector) PgDeleteQuery(queryString string, args ...string) (int64, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	updateResult, queryErr := connect.Exec(queryString, arguments...)
 

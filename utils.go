@@ -21,3 +21,12 @@ func decideDefaultConfigs(cfg DBConfig) DBConfig {
 	}
 	return cfg
 }
+
+// Convert String Slice into Interface Slice
+func convertArgs(args []string) []interface{} {
+	arguments := make([]interface{}, len(args))
+	for i, arg := range args {
+		arguments[i] = arg
+	}
+	return arguments
+}

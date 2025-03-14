@@ -92,11 +92,7 @@ Query Multiple Rows
 @Return: Multiple Row Result
 */
 func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	result, err := connect.Query(queryString, arguments...)
 
@@ -117,11 +113,7 @@ Query Single Row
 @Return: Single Row Result
 */
 func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...string) (*sql.Row, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	result := connect.QueryRow(queryString, arguments...)
 
@@ -142,11 +134,7 @@ Insert Single Data
 @Return: Insert ID
 */
 func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...string) (int64, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	insertResult, insertErr := connect.Exec(queryString, arguments...)
 
@@ -174,11 +162,7 @@ Update Single Data
 @ Return: Affected Rows
 */
 func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...string) (int64, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	updateResult, updateErr := connect.Exec(queryString, arguments...)
 
@@ -205,11 +189,7 @@ Delete Single Data
 @Return: Affected Rows
 */
 func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...string) (int64, error) {
-	var arguments []interface{}
-
-	for _, arg := range args {
-		arguments = append(arguments, arg)
-	}
+	arguments := convertArgs(args)
 
 	delResult, delErr := connect.Exec(queryString, arguments...)
 
