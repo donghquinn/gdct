@@ -5,6 +5,7 @@
 * It provides creating connection pool, queries, and graceful shutdown
 
 ## Dependencies
+* It depend on postgres and mysql driver
 
 ### Postgres
 ```zsh
@@ -16,12 +17,15 @@ go get -u github.com/lib/pq
 go get -u github.com/go-sql-driver/mysql
 ```
 
+---
+
 ## Installation
 
 ```zsh
 go get github.com/donghquinn/gdct
 ```
 
+---
 
 ## Usage
 
