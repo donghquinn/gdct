@@ -38,6 +38,25 @@ func InitMariadbConnection(cfg DBConfig) (*DataBaseConnector, error) {
 	return connect, nil
 }
 
+/*
+Check Connection
+*/
+func (connect *DataBaseConnector) MrCheckConnection() error {
+	// log.Printf("Waiting for Database Connection,,,")
+	// time.Sleep(time.Second * 10)
+
+	pingErr := connect.Ping()
+
+	if pingErr != nil {
+		log.Printf("[CHECK] Database Ping Error: %v", pingErr)
+		return pingErr
+	}
+
+	defer connect.Close()
+
+	return nil
+}
+
 func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 	ctx := context.Background()
 
@@ -66,25 +85,6 @@ func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 		log.Printf("[CREATE_TABLE] Commit Transaction Error: %v", commitErr)
 		return commitErr
 	}
-
-	return nil
-}
-
-/*
-Check Connection
-*/
-func (connect *DataBaseConnector) MrCheckConnection() error {
-	// log.Printf("Waiting for Database Connection,,,")
-	// time.Sleep(time.Second * 10)
-
-	pingErr := connect.Ping()
-
-	if pingErr != nil {
-		log.Printf("[CHECK] Database Ping Error: %v", pingErr)
-		return pingErr
-	}
-
-	defer connect.Close()
 
 	return nil
 }
