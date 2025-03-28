@@ -35,6 +35,8 @@ go get github.com/donghquinn/gdct
 
 ### Mariadb / mysql
 
+* Check Connection
+
 ```go
 package main
 
@@ -58,10 +60,39 @@ func main() {
 }
 ```
 
+* select query
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect("mariadb", gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        MaxLifeTime: 600,
+        MaxIdleConns: 50,
+        MaxOpenConns: 10
+    })
+
+	queryResult, queryErr := conn.MrSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = ? AND example_status = ?", "1234", "1")
+
+    // ...
+}
+
+```
+
+
 ### Postgres
 * All the methods are started with 'pg'
     * pgSelectSingle
     * pgSelectMultiple
+
+* Check Connection 
 
 ```go
 package main
@@ -82,6 +113,32 @@ func main() {
     })
 
     pingErr := conn.PgCheckConnection()
+
+    // ...
+}
+```
+
+* Select
+
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect("mariadb", gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        MaxLifeTime: 600,
+        MaxIdleConns: 50,
+        MaxOpenConns: 10
+    })
+
+	queryResult, queryErr := conn.PgSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = $1 AND example_status = $2", "1234", "1")
 
     // ...
 }
