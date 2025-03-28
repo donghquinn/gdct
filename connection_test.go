@@ -7,7 +7,7 @@ import (
 )
 
 func TestCheckPostTest(t *testing.T) {
-	conn, connErr := gdct.InitConnection("postgres", gdct.DBConfig{
+	conn, connErr := gdct.InitConnection(gdct.PostgreSQL, gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     5432,
 		UserName: "its",
@@ -55,7 +55,7 @@ func TestCheckPostTest(t *testing.T) {
 // }
 
 func TestCheckMariaTest(t *testing.T) {
-	conn, connErr := gdct.InitConnection("mariadb", gdct.DBConfig{
+	conn, connErr := gdct.InitConnection(gdct.MariaDB, gdct.DBConfig{
 		Host:         "192.168.0.241",
 		Port:         3306,
 		UserName:     "its",
@@ -77,7 +77,7 @@ func TestCheckMariaTest(t *testing.T) {
 }
 
 func TestCheckMysqlTest(t *testing.T) {
-	conn, connErr := gdct.InitConnection("mysql", gdct.DBConfig{
+	conn, connErr := gdct.InitConnection(gdct.MysqlDb, gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     3306,
 		UserName: "its",
