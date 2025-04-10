@@ -25,11 +25,18 @@ func InitMariadbConnection(cfg DBConfig) (*DataBaseConnector, error) {
 		return nil, fmt.Errorf("postgres open connection error: %w", err)
 	}
 
-	cfg = decideDefaultConfigs(cfg)
+	cfg = decideDefaultConfigs(cfg, MariaDB)
 
-	db.SetConnMaxLifetime(cfg.MaxLifeTime)
-	db.SetMaxIdleConns(cfg.MaxIdleConns)
-	db.SetMaxOpenConns(cfg.MaxIdleConns)
+	if cfg.MaxIdleConns != nil {
+		db.SetMaxOpenConns(*cfg.MaxIdleConns)
+	}
+	if cfg.MaxLifeTime != nil {
+		db.SetConnMaxLifetime(*cfg.MaxLifeTime)
+	}
+
+	if cfg.MaxOpenConns != nil {
+		db.SetMaxIdleConns(*cfg.MaxIdleConns)
+	}
 
 	connect := &DataBaseConnector{db}
 

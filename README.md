@@ -48,15 +48,21 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
+    var (
+        maxLifeTime = 600
+        maxIdelConns = 50
+        maxOpenConns = 10
+    )
+
     conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
-        MaxLifeTime: 600,
-        MaxIdleConns: 50,
-        MaxOpenConns: 10
+        MaxLifeTime: &maxLifeTime,
+        MaxIdleConns: &maxIdelConns,
+        MaxOpenConns: &maxOpenConns
     })
 
     pingErr := conn.MrCheckConnection()
@@ -64,10 +70,10 @@ func main() {
     // ...
 
     qb := gdct.BuildSelect(gdct.MariaDB, "table_name", "col1").
-    Where("col1 = ?", 100).
-    OrderBy("col1", "ASC", nil).
-    Limit(10).
-    Offset(5)
+        Where("col1 = ?", 100).
+        OrderBy("col1", "ASC", nil).
+        Limit(10).
+        Offset(5)
 
 	queryString, args, err := qb.Build()
 
@@ -89,9 +95,6 @@ func main() {
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
-        MaxLifeTime: 600,
-        MaxIdleConns: 50,
-        MaxOpenConns: 10
     })
 
 	queryResult, queryErr := conn.MrSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = ? AND example_status = ?", "1234", "1")
@@ -115,16 +118,23 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
+    var (
+        sslMode = "disable"
+        maxLifeTime = 600
+        maxIdelConns = 50
+        maxOpenConns = 10
+    )
+
     conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
-        SslMode: "disable",
-        MaxLifeTime: 600,
-        MaxIdleConns: 50,
-        MaxOpenConns: 10
+        SslMode: &sslMode,
+        MaxLifeTime: &maxLifeTime,
+        MaxIdleConns: &maxIdelConns,
+        MaxOpenConns: &maxOpenConns
     })
 
     pingErr := conn.PgCheckConnection()
@@ -171,9 +181,6 @@ func main() {
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
-        MaxLifeTime: 600,
-        MaxIdleConns: 50,
-        MaxOpenConns: 10
     })
 
 	queryResult, queryErr := conn.PgSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = $1 AND example_status = $2", "1234", "1")

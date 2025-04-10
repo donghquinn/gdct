@@ -12,10 +12,10 @@ type DBConfig struct {
 	Host         string
 	Port         int
 	Database     string
-	SslMode      string
-	MaxLifeTime  time.Duration
-	MaxIdleConns int
-	MaxOpenConns int
+	SslMode      *string
+	MaxLifeTime  *time.Duration
+	MaxIdleConns *int
+	MaxOpenConns *int
 }
 
 type DataBaseConnector struct {

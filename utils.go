@@ -9,16 +9,27 @@ Max Life Time: 60
 Max Idle Connections: 50
 Max Open Connections: 100
 */
-func decideDefaultConfigs(cfg DBConfig) DBConfig {
-	if cfg.MaxLifeTime == 0 {
-		cfg.MaxLifeTime = 60 * time.Second
+func decideDefaultConfigs(cfg DBConfig, dbType DBType) DBConfig {
+	if cfg.MaxLifeTime == nil {
+		defaultLifetime := 60 * time.Second
+		cfg.MaxLifeTime = &defaultLifetime
 	}
-	if cfg.MaxIdleConns == 0 {
-		cfg.MaxIdleConns = 50
+
+	if cfg.MaxIdleConns == nil {
+		defaultIdleConns := 50
+		cfg.MaxIdleConns = &defaultIdleConns
 	}
-	if cfg.MaxOpenConns == 0 {
-		cfg.MaxOpenConns = 100
+
+	if cfg.MaxOpenConns == nil {
+		defaultOpenConns := 100
+		cfg.MaxOpenConns = &defaultOpenConns
 	}
+
+	if dbType == PostgreSQL && cfg.SslMode == nil {
+		defaultSslMode := "disable"
+		cfg.SslMode = &defaultSslMode
+	}
+
 	return cfg
 }
 

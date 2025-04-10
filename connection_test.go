@@ -2,18 +2,21 @@ package gdct_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/donghquinn/gdct"
 )
 
 func TestCheckPostTest(t *testing.T) {
+	sslMode := "disable" // Only Postgres
+
 	conn, connErr := gdct.InitConnection(gdct.PostgreSQL, gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     5432,
 		UserName: "its",
 		Password: "1234",
 		Database: "its",
-		SslMode:  "disable",
+		SslMode:  &sslMode,
 	})
 
 	if connErr != nil {
@@ -55,15 +58,19 @@ func TestCheckPostTest(t *testing.T) {
 // }
 
 func TestCheckMariaTest(t *testing.T) {
+	lifetime := time.Duration(600) * time.Second
+	idleConns := 10
+	openConns := 50
+
 	conn, connErr := gdct.InitConnection(gdct.MariaDB, gdct.DBConfig{
 		Host:         "192.168.0.241",
 		Port:         3306,
 		UserName:     "its",
 		Password:     "1234",
 		Database:     "its",
-		MaxLifeTime:  600,
-		MaxIdleConns: 10,
-		MaxOpenConns: 50,
+		MaxLifeTime:  &lifetime,
+		MaxIdleConns: &idleConns,
+		MaxOpenConns: &openConns,
 	})
 
 	if connErr != nil {
