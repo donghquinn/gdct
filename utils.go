@@ -26,7 +26,7 @@ func decideDefaultConfigs(cfg DBConfig, dbType DBType) DBConfig {
 	}
 
 	if dbType == PostgreSQL && cfg.SslMode == nil {
-		defaultSslMode := "disable"
+		defaultSslMode := "require"
 		cfg.SslMode = &defaultSslMode
 	}
 
