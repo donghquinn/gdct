@@ -40,7 +40,8 @@ go get github.com/donghquinn/gdct
 
 ### Mariadb / mysql
 
-* Check Connection
+* Select Rows with query builder
+    * Use QueryBuilderRows for multiple rows and QueryBuilderOneRow for single rows
 
 ```go
 package main
@@ -65,8 +66,6 @@ func main() {
         MaxOpenConns: &maxOpenConns
     })
 
-    pingErr := conn.MrCheckConnection()
-
     // ...
 
     qb := gdct.BuildSelect(gdct.MariaDB, "table_name", "col1").
@@ -77,11 +76,13 @@ func main() {
 
 	queryString, args, err := qb.Build()
 
-    queryResult, queryErr := dbCon.QueryRows(queryString, args)
+    queryResult, queryErr := conn.QueryBuilderRows(queryString, args)
 }
 ```
 
-* select query
+
+* select one row query
+    * You can use MrSelect... method for query string, not using query builder
 
 ```go
 package main
@@ -101,7 +102,6 @@ func main() {
 
     // ...
 }
-
 ```
 
 
@@ -110,7 +110,9 @@ func main() {
     * pgSelectSingle
     * pgSelectMultiple
 
-* Check Connection 
+* Select Rows with query builder
+    * Use QueryBuilderRows for multiple rows and QueryBuilderOneRow for single rows
+
 
 ```go
 package main
@@ -137,10 +139,9 @@ func main() {
         MaxOpenConns: &maxOpenConns
     })
 
-    pingErr := conn.PgCheckConnection()
-
     // ...
 
+    // Query Building
     qb := gqbd.BuildSelect(gqbd.PostgreSQL, "example_table e", "e.id", "e.name", "u.user").
     LeftJoin("user_table u", "u.user_id = e.id")
 
@@ -162,11 +163,13 @@ func main() {
 
 	queryString, args, err := qb.Build()
 
-    queryResult, queryErr := dbCon.QueryBuilderRows(queryString, args)
+
+    // Send Query and get returns
+    queryResult, queryErr := conn.QueryBuilderRows(queryString, args)
 }
 ```
 
-* Select
+* Select without query builder
 
 
 ```go
@@ -187,4 +190,26 @@ func main() {
 
     // ...
 }
+```
+
+* Insert
+    * Can get returning values from INSERT queries
+
+```go
+    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+    var exampleId int64
+
+    insertErr := conn.PgInsertQuery(
+        "INSERT example (exam_name, exam_status) VALUES ($1, $2) RETURNING exam_id", 
+        []interface{}{&exampleSeqe}, // Returning Value
+        "Example Name", "10" // Arguments
+    )
+
 ```
