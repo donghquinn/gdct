@@ -77,7 +77,7 @@ func TestCheckMariaTest(t *testing.T) {
 }
 
 func TestCheckMysqlTest(t *testing.T) {
-	conn, connErr := gdct.InitConnection(gdct.MysqlDb, gdct.DBConfig{
+	conn, connErr := gdct.InitConnection(gdct.Mysql, gdct.DBConfig{
 		Host:     "192.168.0.241",
 		Port:     3306,
 		UserName: "its",

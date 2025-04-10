@@ -2,7 +2,9 @@
 
 ## Introduction
 * It's Database Client Package
-<!-- * It provides creating connection pool, queries, and graceful shutdown -->
+* I've combined [go-query-builder](https://github.com/donghquinn/gqbd) with database client package
+    * This package will allow to building queries and connect database pool
+* In order word, it's combined tool for querying database includeing query strings and connections.
 
 ## Dependencies
 * It depends on postgres and mysql driver
@@ -32,6 +34,9 @@ go get github.com/donghquinn/gdct
 * Every  Single Method will close connection after transaction commited.
 * So you have to open connection again for every time.
 * Postgres start with Pg and Mariadb start with Mr
+* (2025-04-10 Added) QueryBuilderOneRow() and QueryBuilderRows() is the mothods for builded query strings
+    * QueryBuilderOneRow will query single row
+    * QueryBuilderRows will query mutliple rows
 
 ### Mariadb / mysql
 
@@ -57,6 +62,16 @@ func main() {
     pingErr := conn.MrCheckConnection()
 
     // ...
+
+    qb := gdct.BuildSelect(gdct.MariaDB, "table_name", "col1").
+    Where("col1 = ?", 100).
+    OrderBy("col1", "ASC", nil).
+    Limit(10).
+    Offset(5)
+
+	queryString, args, err := qb.Build()
+
+    queryResult, queryErr := dbCon.QueryRows(queryString, args)
 }
 ```
 
