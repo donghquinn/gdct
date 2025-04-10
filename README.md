@@ -1,5 +1,10 @@
 # Go-Database-Client
 
+## Notice Since v1.0.0
+* Added Query Builder
+    * Query Build for dynamic queries
+* If you only need query builder, try [go-query-builder](https://github.com/donghquinn/gqbd)!
+
 ## Introduction
 * It's Database Client Package
 * I've combined [go-query-builder](https://github.com/donghquinn/gqbd) with database client package
