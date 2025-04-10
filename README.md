@@ -115,7 +115,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitConnect(gdct.Postgres, gdct.DBConfig{
+    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -130,6 +130,29 @@ func main() {
     pingErr := conn.PgCheckConnection()
 
     // ...
+
+    qb := gqbd.BuildSelect(gqbd.PostgreSQL, "example_table e", "e.id", "e.name", "u.user").
+    LeftJoin("user_table u", "u.user_id = e.id")
+
+	if userName != "" {
+		qb = qb.Where("u.user_name LIKE ?", "%"+userName+"%")
+	}
+
+	// title이 비어있지 않은 경우에만 조건 추가
+	if title != "" {
+		qb = qb.Where("e.name LIKE ?", "%"+title+"%")
+	}
+	// 상태 조건은 항상 추가
+	qb = qb.Where("e.example_status = ?", "1")
+
+	// 정렬, 오프셋, 제한 설정
+	qb = qb.OrderBy(orderByColumn, "DESC", nil).
+		Offset(offset).
+		Limit(limit)
+
+	queryString, args, err := qb.Build()
+
+    queryResult, queryErr := dbCon.QueryBuilderRows(queryString, args)
 }
 ```
 
@@ -142,7 +165,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitConnect(gdct.Postgres, gdct.DBConfig{
+    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
