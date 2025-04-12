@@ -513,6 +513,8 @@ func (qb *QueryBuilder) buildInsert() (string, []interface{}, error) {
 	var cols []string
 	var placeholders []string
 	var args []interface{}
+
+	// 먼저 모든 열과 값을 수집
 	for col, val := range qb.data {
 		safeCol, err := EscapeIdentifier(qb.dbType, col)
 		if err != nil {
@@ -522,10 +524,20 @@ func (qb *QueryBuilder) buildInsert() (string, []interface{}, error) {
 		placeholders = append(placeholders, "?")
 		args = append(args, val)
 	}
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", qb.table, strings.Join(cols, ", "), strings.Join(placeholders, ", "))
+
+	// placeholders 문자열 생성
+	placeholdersStr := strings.Join(placeholders, ", ")
+
+	// PostgreSQL을 위한 변환 수행
+	if qb.dbType == PostgreSQL {
+		placeholdersStr = ReplacePlaceholders(qb.dbType, placeholdersStr, 1)
+	}
+
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", qb.table, strings.Join(cols, ", "), placeholdersStr)
 	if qb.dbType == PostgreSQL && qb.returning != "" {
 		query += " RETURNING " + qb.returning
 	}
+
 	return query, args, nil
 }
 
