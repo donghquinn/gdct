@@ -525,10 +525,8 @@ func (qb *QueryBuilder) buildInsert() (string, []interface{}, error) {
 		args = append(args, val)
 	}
 
-	// placeholders 문자열 생성
 	placeholdersStr := strings.Join(placeholders, ", ")
 
-	// PostgreSQL을 위한 변환 수행
 	if qb.dbType == PostgreSQL {
 		placeholdersStr = ReplacePlaceholders(qb.dbType, placeholdersStr, 1)
 	}
@@ -547,6 +545,8 @@ func (qb *QueryBuilder) buildUpdate() (string, []interface{}, error) {
 	}
 	var setClauses []string
 	var updateArgs []interface{}
+
+	// SET 절의 값들을 수집
 	for col, val := range qb.data {
 		safeCol, err := EscapeIdentifier(qb.dbType, col)
 		if err != nil {
@@ -555,11 +555,21 @@ func (qb *QueryBuilder) buildUpdate() (string, []interface{}, error) {
 		setClauses = append(setClauses, fmt.Sprintf("%s = ?", safeCol))
 		updateArgs = append(updateArgs, val)
 	}
-	query := fmt.Sprintf("UPDATE %s SET %s", qb.table, strings.Join(setClauses, ", "))
+
+	setClausesStr := strings.Join(setClauses, ", ")
+
+	if qb.dbType == PostgreSQL {
+		setClausesStr = ReplacePlaceholders(qb.dbType, setClausesStr, 1)
+	}
+
+	query := fmt.Sprintf("UPDATE %s SET %s", qb.table, setClausesStr)
+
+	// WHERE 절 추가
 	if len(qb.conditions) > 0 {
 		query += " WHERE " + strings.Join(qb.conditions, " AND ")
 		updateArgs = append(updateArgs, qb.args...)
 	}
+
 	return query, updateArgs, nil
 }
 
