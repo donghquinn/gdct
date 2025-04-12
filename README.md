@@ -218,3 +218,44 @@ func main() {
     )
 
 ```
+
+* With Query Building
+
+```go
+	data := map[string]interface{}{
+		"col1": 200,
+		"col2": "test",
+	}
+
+	qb := gqbd.BuildInsert(gqbd.PostgreSQL, "table_name").
+		Values(data)
+
+	query, args, err := qb.Build()
+
+    // .... 
+
+    insertResult, insertErr := conn.QueryBuilderInsert(query, args)
+    // ...
+```
+
+
+* Update
+    * With Query Building
+
+```go
+	data := map[string]interface{}{
+		"col1": 200,
+		"col2": "test",
+	}
+
+	qb := gqbd.BuildUpdate(gqbd.PostgreSQL, "table_name").
+		Set(data).
+        Where("col1 = ?", 100)
+
+	query, args, err := qb.Build()
+
+    // .... 
+
+    insertResult, insertErr := conn.QueryBuilderUpdate(query, args)
+    // ...
+```
