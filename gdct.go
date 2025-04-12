@@ -58,3 +58,27 @@ func (connect *DataBaseConnector) QueryBuilderOneRow(queryString string, args []
 
 	return result, nil
 }
+
+func (connect *DataBaseConnector) QueryBuilderInsert(queryString string, args []interface{}) (sql.Result, error) {
+	updateResult, err := connect.Exec(queryString, args...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer connect.Close()
+
+	return updateResult, nil
+}
+
+func (connect *DataBaseConnector) QueryBuilderUpdate(queryString string, args []interface{}) (sql.Result, error) {
+	updateResult, err := connect.Exec(queryString, args...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer connect.Close()
+
+	return updateResult, nil
+}
