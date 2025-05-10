@@ -217,13 +217,13 @@ INSERT Multiple Data with DB Transaction
 
 @ queryString: Query String with prepared statement
 */
-func (connect *DataBaseConnector) PgInsertMultiple(queryList []string) ([]sql.Result, error) {
+func (connect *DataBaseConnector) PgInsertMultiple(queries []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
+		return nil, fmt.Errorf("begin transaction error: %w", txErr)
 	}
 
 	defer func() {
@@ -234,11 +234,23 @@ func (connect *DataBaseConnector) PgInsertMultiple(queryList []string) ([]sql.Re
 
 	var txResultList []sql.Result
 
-	for _, queryString := range queryList {
-		txResult, execErr := tx.ExecContext(ctx, queryString)
+	for _, query := range queries {
+		// Prepared statement 사용
+		stmt, prepareErr := tx.PrepareContext(ctx, query.Query)
+		if prepareErr != nil {
+			return nil, fmt.Errorf("prepare statement error: %w", prepareErr)
+		}
+
+		// PreparedStatement 실행
+		txResult, execErr := stmt.ExecContext(ctx, query.Params...)
+
+		// Statement 닫기
+		if closeErr := stmt.Close(); closeErr != nil {
+			log.Printf("[INSERT_MULTIPLE] Statement close error: %v", closeErr)
+		}
 
 		if execErr != nil {
-			return nil, fmt.Errorf("exec insert multiple transaction context error: %w", execErr)
+			return nil, fmt.Errorf("exec prepared statement error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
