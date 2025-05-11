@@ -217,7 +217,7 @@ INSERT Multiple Data with DB Transaction
 
 @ queryString: Query String with prepared statement
 */
-func (connect *DataBaseConnector) PgInsertMultiple(queries []PreparedQuery) ([]sql.Result, error) {
+func (connect *DataBaseConnector) PgInsertMultiple(queryList []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
 	tx, txErr := connect.Begin()
@@ -232,7 +232,7 @@ func (connect *DataBaseConnector) PgInsertMultiple(queries []PreparedQuery) ([]s
 
 	var txResultList []sql.Result
 
-	for _, query := range queries {
+	for _, query := range queryList {
 		// Prepared statement
 		stmt, prepareErr := tx.PrepareContext(ctx, query.Query)
 		if prepareErr != nil {
@@ -264,7 +264,7 @@ UPDATE Multiple Data with DB Transaction
 
 @ queryString: Query String with prepared statement
 */
-func (connect *DataBaseConnector) PgUpdateMultiple(queries []PreparedQuery) ([]sql.Result, error) {
+func (connect *DataBaseConnector) PgUpdateMultiple(queryList []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
 	tx, txErr := connect.Begin()
@@ -279,7 +279,7 @@ func (connect *DataBaseConnector) PgUpdateMultiple(queries []PreparedQuery) ([]s
 
 	var txResultList []sql.Result
 
-	for _, query := range queries {
+	for _, query := range queryList {
 		// Prepared statement
 		stmt, prepareErr := tx.PrepareContext(ctx, query.Query)
 		if prepareErr != nil {
