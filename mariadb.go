@@ -315,28 +315,36 @@ DELETE Multiple Data with DB Transaction
 
 @ queryString: Query String with prepared statement
 */
-func (connect *DataBaseConnector) MrDeleteMultiple(queryList []string) ([]sql.Result, error) {
+func (connect *DataBaseConnector) MrDeleteMultiple(queryList []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
+		return nil, fmt.Errorf("begin transaction error: %w", txErr)
 	}
 
 	defer func() {
-		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
-			log.Printf("[DELETE_MULTIPLE] Transaction rollback error: %v", txErr)
-		}
+		_ = tx.Rollback()
 	}()
 
 	var txResultList []sql.Result
 
-	for _, queryString := range queryList {
-		txResult, execErr := tx.ExecContext(ctx, queryString)
+	for _, query := range queryList {
+		// Prepared statement
+		stmt, prepareErr := tx.PrepareContext(ctx, query.Query)
+		if prepareErr != nil {
+			return nil, fmt.Errorf("prepare statement error: %w", prepareErr)
+		}
+
+		// PreparedStatement
+		txResult, execErr := stmt.ExecContext(ctx, query.Params...)
+
+		// Statement
+		stmt.Close()
 
 		if execErr != nil {
-			return nil, fmt.Errorf("exec delete multiple transaction context error: %w", execErr)
+			return nil, fmt.Errorf("exec prepared statement error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
