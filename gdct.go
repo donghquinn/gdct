@@ -22,6 +22,11 @@ type DataBaseConnector struct {
 	*sql.DB
 }
 
+type PreparedQuery struct {
+	Query  string
+	Params []interface{}
+}
+
 func InitConnection(dbType DBType, cfg DBConfig) (*DataBaseConnector, error) {
 	switch dbType {
 	case MariaDB:
