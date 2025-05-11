@@ -125,7 +125,7 @@ func main() {
         Database: "test_db",
     })
 
-    queryList := make([]gdct.PreparedQuery, len(data))
+    queryList := make([]gdct.PreparedQuery, len(dataList))
 
     for _ data := range dataList {
         queryData := gdct.PreparedQuery{
@@ -163,7 +163,7 @@ func main() {
         Database: "test_db",
     })
 
-    queryList := make([]gdct.PreparedQuery, len(data))
+    queryList := make([]gdct.PreparedQuery, len(dataList))
 
     for _ data := range dataList {
         queryData := gdct.PreparedQuery{
@@ -201,7 +201,7 @@ func main() {
         Database: "test_db",
     })
 
-    queryList := make([]gdct.PreparedQuery, len(data))
+    queryList := make([]gdct.PreparedQuery, len(dataList))
 
     for _ data := range dataList {
         queryData := gdct.PreparedQuery{
@@ -394,7 +394,7 @@ func main() {
         SslMode: &sslMode
     })
 
-    queryList := make([]gdct.PreparedQuery, len(data))
+    queryList := make([]gdct.PreparedQuery, len(dataList))
 
     for _ data := range dataList {
         queryData := gdct.PreparedQuery{
@@ -433,7 +433,7 @@ func main() {
         SslMode: &sslMode,
     })
 
-    queryList := make([]gdct.PreparedQuery, len(data))
+    queryList := make([]gdct.PreparedQuery, len(dataList))
 
     for _ data := range dataList {
         queryData := gdct.PreparedQuery{
@@ -473,7 +473,7 @@ func main() {
         SslMode: &sslMode,
     })
 
-    queryList := make([]gdct.PreparedQuery, len(data))
+    queryList := make([]gdct.PreparedQuery, len(dataList))
 
     for _ data := range dataList {
         queryData := gdct.PreparedQuery{
