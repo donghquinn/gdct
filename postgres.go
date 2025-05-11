@@ -227,27 +227,23 @@ func (connect *DataBaseConnector) PgInsertMultiple(queries []PreparedQuery) ([]s
 	}
 
 	defer func() {
-		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
-			log.Printf("[INSERT_MULTIPLE] Transaction rollback error: %v", txErr)
-		}
+		_ = tx.Rollback() // 에러 명시적으로 무시
 	}()
 
 	var txResultList []sql.Result
 
 	for _, query := range queries {
-		// Prepared statement 사용
+		// Prepared statement
 		stmt, prepareErr := tx.PrepareContext(ctx, query.Query)
 		if prepareErr != nil {
 			return nil, fmt.Errorf("prepare statement error: %w", prepareErr)
 		}
 
-		// PreparedStatement 실행
+		// PreparedStatement
 		txResult, execErr := stmt.ExecContext(ctx, query.Params...)
 
-		// Statement 닫기
-		if closeErr := stmt.Close(); closeErr != nil {
-			log.Printf("[INSERT_MULTIPLE] Statement close error: %v", closeErr)
-		}
+		// Statement
+		stmt.Close()
 
 		if execErr != nil {
 			return nil, fmt.Errorf("exec prepared statement error: %w", execErr)
@@ -268,28 +264,36 @@ UPDATE Multiple Data with DB Transaction
 
 @ queryString: Query String with prepared statement
 */
-func (connect *DataBaseConnector) PgUpdateMultiple(queryList []string) ([]sql.Result, error) {
+func (connect *DataBaseConnector) PgUpdateMultiple(queries []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
 	tx, txErr := connect.Begin()
 
 	if txErr != nil {
-		return nil, fmt.Errorf("bigin transaction error: %w", txErr)
+		return nil, fmt.Errorf("begin transaction error: %w", txErr)
 	}
 
 	defer func() {
-		if txErr := tx.Rollback(); txErr != nil && txErr != sql.ErrTxDone {
-			log.Printf("[UPDATE_MULTIPLE] Transaction rollback error: %v", txErr)
-		}
+		_ = tx.Rollback() // 에러 명시적으로 무시
 	}()
 
 	var txResultList []sql.Result
 
-	for _, queryString := range queryList {
-		txResult, execErr := tx.ExecContext(ctx, queryString)
+	for _, query := range queries {
+		// Prepared statement
+		stmt, prepareErr := tx.PrepareContext(ctx, query.Query)
+		if prepareErr != nil {
+			return nil, fmt.Errorf("prepare statement error: %w", prepareErr)
+		}
+
+		// PreparedStatement
+		txResult, execErr := stmt.ExecContext(ctx, query.Params...)
+
+		// Statement
+		stmt.Close()
 
 		if execErr != nil {
-			return nil, fmt.Errorf("exec update multiple transaction context error: %w", execErr)
+			return nil, fmt.Errorf("exec prepared statement error: %w", execErr)
 		}
 
 		txResultList = append(txResultList, txResult)
