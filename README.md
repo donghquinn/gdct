@@ -109,6 +109,44 @@ func main() {
 }
 ```
 
+* Insert Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(data))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "INSERT INTO example_table (column1, column2, column3) VALUES ($1, $2, $3)",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.PgInsertMultiple(queryList)
+
+    // ...
+}
+
+```
+
 
 ### Postgres
 * All the methods are started with 'pg'
