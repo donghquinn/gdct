@@ -231,7 +231,7 @@ func (connect *DataBaseConnector) MrInsertMultiple(queryList []PreparedQuery) ([
 	}
 
 	defer func() {
-		_ = tx.Rollback() // 에러 명시적으로 무시
+		_ = tx.Rollback()
 	}()
 
 	var txResultList []sql.Result
@@ -278,7 +278,7 @@ func (connect *DataBaseConnector) MrUpdateMultiple(queryList []PreparedQuery) ([
 	}
 
 	defer func() {
-		_ = tx.Rollback() // 에러 명시적으로 무시
+		_ = tx.Rollback()
 	}()
 
 	var txResultList []sql.Result
