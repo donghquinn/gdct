@@ -147,6 +147,44 @@ func main() {
 
 ```
 
+* Update Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(data))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "UPDATE example_table SET column1 = $1, column2 = $2, column = $3",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.PgUpdateMultiple(queryList)
+
+    // ...
+}
+
+```
+
 
 ### Postgres
 * All the methods are started with 'pg'
@@ -221,12 +259,15 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
+    sslMode := "disable"
+
     conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
+        SslMode: &sslMode
     })
 
 	queryResult, queryErr := conn.PgSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = $1 AND example_status = $2", "1234", "1")
@@ -245,6 +286,7 @@ func main() {
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
+        SslMode: &sslMode
     })
 
     var exampleId int64
@@ -296,4 +338,82 @@ func main() {
 
     insertResult, insertErr := conn.QueryBuilderUpdate(query, args)
     // ...
+```
+
+* Insert Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        SslMode: &sslMode
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(data))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "INSERT INTO example_table (column1, column2, column3) VALUES ($1, $2, $3)",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.PgInsertMultiple(queryList)
+
+    // ...
+}
+
+```
+
+* Update Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        SslMode: &sslMode
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(data))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "UPDATE example_table SET column1 = $1, column2 = $2, column = $3",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.PgUpdateMultiple(queryList)
+
+    // ...
+}
+
 ```
