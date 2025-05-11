@@ -140,7 +140,7 @@ func main() {
         queryList = queryList.append(queryList, queryData)
     }
 
-	insertResultList, queryErr := conn.PgInsertMultiple(queryList)
+	insertResultList, queryErr := conn.MrInsertMultiple(queryList)
 
     // ...
 }
@@ -178,13 +178,50 @@ func main() {
         queryList = queryList.append(queryList, queryData)
     }
 
-	insertResultList, queryErr := conn.PgUpdateMultiple(queryList)
+	insertResultList, queryErr := conn.MrUpdateMultiple(queryList)
 
     // ...
 }
 
 ```
 
+* DELETE Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(data))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "DELETE example_table WHERE column1 = $1, column2 = $2, column = $3",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.MrDeleteMultiple(queryList)
+
+    // ...
+}
+
+```
 
 ### Postgres
 * All the methods are started with 'pg'
@@ -393,7 +430,7 @@ func main() {
         Host: "192.168.0.101",
         Port: 123,
         Database: "test_db",
-        SslMode: &sslMode
+        SslMode: &sslMode,
     })
 
     queryList := make([]gdct.PreparedQuery, len(data))
@@ -401,6 +438,46 @@ func main() {
     for _ data := range dataList {
         queryData := gdct.PreparedQuery{
             Query: "UPDATE example_table SET column1 = $1, column2 = $2, column = $3",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.PgUpdateMultiple(queryList)
+
+    // ...
+}
+
+```
+
+
+* DELETE Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        SslMode: &sslMode,
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(data))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "DELETE example_table WHERE column1 = $1, column2 = $2, column = $3",
             Params: []interface{}{
                 data.exampleItem,
                 data.exampleItem2,
