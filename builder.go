@@ -231,7 +231,9 @@ func (qb *QueryBuilder) Where(condition string, args ...interface{}) *QueryBuild
 	if qb.err != nil {
 		return qb
 	}
-	updatedCondition := ReplacePlaceholders(qb.dbType, condition, len(qb.args)+1)
+
+	startIdx := len(qb.args) + 1
+	updatedCondition := ReplacePlaceholders(qb.dbType, condition, startIdx)
 	qb.conditions = append(qb.conditions, updatedCondition)
 	qb.args = append(qb.args, args...)
 	return qb
@@ -513,20 +515,22 @@ func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 	}
 
 	if qb.limit > 0 {
-		limitPlaceholder := "?"
+		nextParamIndex := len(args) + 1
 		if qb.dbType == PostgreSQL {
-			limitPlaceholder = fmt.Sprintf("$%d", len(args)+1)
+			queryBuilder.WriteString(fmt.Sprintf(" LIMIT $%d", nextParamIndex))
+		} else {
+			queryBuilder.WriteString(" LIMIT ?")
 		}
-		queryBuilder.WriteString(" LIMIT " + limitPlaceholder)
 		args = append(args, qb.limit)
 	}
 
 	if qb.offset > 0 {
-		offsetPlaceholder := "?"
+		nextParamIndex := len(args) + 1
 		if qb.dbType == PostgreSQL {
-			offsetPlaceholder = fmt.Sprintf("$%d", len(args)+1)
+			queryBuilder.WriteString(fmt.Sprintf(" OFFSET $%d", nextParamIndex))
+		} else {
+			queryBuilder.WriteString(" OFFSET ?")
 		}
-		queryBuilder.WriteString(" OFFSET " + offsetPlaceholder)
 		args = append(args, qb.offset)
 	}
 
@@ -754,11 +758,7 @@ func ReplacePlaceholders(dbType DBType, input string, start int) string {
 			count++
 			result = strings.Replace(result, "?", fmt.Sprintf("$%d", start+count-1), 1)
 		}
-
-		return placeholderRegexp.ReplaceAllStringFunc(result, func(m string) string {
-			num, _ := strconv.Atoi(strings.TrimPrefix(m, "$"))
-			return "$" + strconv.Itoa(start+num-1)
-		})
+		return result
 	default:
 		return input
 	}
