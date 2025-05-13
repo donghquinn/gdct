@@ -475,6 +475,9 @@ func (qb *QueryBuilder) Build() (string, []interface{}, error) {
 	}
 }
 
+/*
+build select query string
+*/
 func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 	var queryBuilder strings.Builder
 	args := make([]interface{}, len(qb.args))
@@ -484,6 +487,7 @@ func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 	if qb.distinct {
 		queryBuilder.WriteString("DISTINCT ")
 	}
+
 	queryBuilder.WriteString(strings.Join(qb.columns, ", "))
 	queryBuilder.WriteString(" FROM ")
 	queryBuilder.WriteString(qb.table)
@@ -521,6 +525,9 @@ func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 	return queryBuilder.String(), args, nil
 }
 
+/*
+build insert query string
+*/
 func (qb *QueryBuilder) buildInsert() (string, []interface{}, error) {
 	if qb.data == nil {
 		return "", nil, fmt.Errorf("no data provided for INSERT")
@@ -555,6 +562,9 @@ func (qb *QueryBuilder) buildInsert() (string, []interface{}, error) {
 	return query, args, nil
 }
 
+/*
+build update query string
+*/
 func (qb *QueryBuilder) buildUpdate() (string, []interface{}, error) {
 	if qb.data == nil {
 		return "", nil, fmt.Errorf("no data provided for UPDATE")
@@ -596,6 +606,9 @@ func (qb *QueryBuilder) buildUpdate() (string, []interface{}, error) {
 	return query, updateArgs, nil
 }
 
+/*
+build delete query string
+*/
 func (qb *QueryBuilder) buildDelete() (string, []interface{}, error) {
 	var queryBuilder strings.Builder
 	queryBuilder.WriteString("DELETE FROM ")
