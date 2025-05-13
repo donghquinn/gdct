@@ -477,6 +477,9 @@ func (qb *QueryBuilder) Build() (string, []interface{}, error) {
 
 func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 	var queryBuilder strings.Builder
+	args := make([]interface{}, len(qb.args))
+	copy(args, qb.args) // Create a copy to avoid modifying the original
+
 	queryBuilder.WriteString("SELECT ")
 	if qb.distinct {
 		queryBuilder.WriteString("DISTINCT ")
@@ -484,38 +487,46 @@ func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 	queryBuilder.WriteString(strings.Join(qb.columns, ", "))
 	queryBuilder.WriteString(" FROM ")
 	queryBuilder.WriteString(qb.table)
+
 	if len(qb.joins) > 0 {
 		queryBuilder.WriteString(" " + strings.Join(qb.joins, " "))
 	}
+
 	if len(qb.conditions) > 0 {
 		queryBuilder.WriteString(" WHERE " + strings.Join(qb.conditions, " AND "))
 	}
+
 	if len(qb.groupBy) > 0 {
 		queryBuilder.WriteString(" GROUP BY " + strings.Join(qb.groupBy, ", "))
 	}
+
 	if len(qb.having) > 0 {
 		queryBuilder.WriteString(" HAVING " + strings.Join(qb.having, " AND "))
 	}
+
 	if qb.orderBy != "" {
 		queryBuilder.WriteString(" ORDER BY " + qb.orderBy)
 	}
+
 	if qb.limit > 0 {
 		if qb.dbType == PostgreSQL {
-			queryBuilder.WriteString(fmt.Sprintf(" LIMIT $%d", len(qb.args)+1))
+			queryBuilder.WriteString(fmt.Sprintf(" LIMIT $%d", len(args)+1))
 		} else {
 			queryBuilder.WriteString(" LIMIT ?")
 		}
-		qb.args = append(qb.args, qb.limit)
+		args = append(args, qb.limit)
 	}
+
 	if qb.offset > 0 {
 		if qb.dbType == PostgreSQL {
-			queryBuilder.WriteString(fmt.Sprintf(" OFFEST $%d", len(qb.args)+1))
+			queryBuilder.WriteString(fmt.Sprintf(" OFFSET $%d", len(args)+1))
 		} else {
-			queryBuilder.WriteString(" OFFEST ?")
+			queryBuilder.WriteString(" OFFSET ?")
 		}
-		qb.args = append(qb.args, qb.limit)
+		args = append(args, qb.offset) // Fixed - was using qb.limit incorrectly
 	}
-	return queryBuilder.String(), qb.args, nil
+
+	return queryBuilder.String(), args, nil
 }
 
 func (qb *QueryBuilder) buildInsert() (string, []interface{}, error) {
@@ -526,24 +537,25 @@ func (qb *QueryBuilder) buildInsert() (string, []interface{}, error) {
 	var placeholders []string
 	var args []interface{}
 
-	// 먼저 모든 열과 값을 수집
+	i := 1
 	for col, val := range qb.data {
 		safeCol, err := EscapeIdentifier(qb.dbType, col)
 		if err != nil {
 			return "", nil, err
 		}
 		cols = append(cols, safeCol)
-		placeholders = append(placeholders, "?")
+
+		if qb.dbType == PostgreSQL {
+			placeholders = append(placeholders, fmt.Sprintf("$%d", i))
+		} else {
+			placeholders = append(placeholders, "?")
+		}
+
 		args = append(args, val)
+		i++
 	}
 
-	placeholdersStr := strings.Join(placeholders, ", ")
-
-	if qb.dbType == PostgreSQL {
-		placeholdersStr = ReplacePlaceholders(qb.dbType, placeholdersStr, 1)
-	}
-
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", qb.table, strings.Join(cols, ", "), placeholdersStr)
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", qb.table, strings.Join(cols, ", "), strings.Join(placeholders, ", "))
 	if qb.dbType == PostgreSQL && qb.returning != "" {
 		query += " RETURNING " + qb.returning
 	}
@@ -558,28 +570,35 @@ func (qb *QueryBuilder) buildUpdate() (string, []interface{}, error) {
 	var setClauses []string
 	var updateArgs []interface{}
 
-	// SET 절의 값들을 수집
+	i := 1
 	for col, val := range qb.data {
 		safeCol, err := EscapeIdentifier(qb.dbType, col)
 		if err != nil {
 			return "", nil, err
 		}
-		setClauses = append(setClauses, fmt.Sprintf("%s = ?", safeCol))
+
+		if qb.dbType == PostgreSQL {
+			setClauses = append(setClauses, fmt.Sprintf("%s = $%d", safeCol, i))
+		} else {
+			setClauses = append(setClauses, fmt.Sprintf("%s = ?", safeCol))
+		}
+
 		updateArgs = append(updateArgs, val)
+		i++
 	}
 
-	setClausesStr := strings.Join(setClauses, ", ")
+	query := fmt.Sprintf("UPDATE %s SET %s", qb.table, strings.Join(setClauses, ", "))
 
-	if qb.dbType == PostgreSQL {
-		setClausesStr = ReplacePlaceholders(qb.dbType, setClausesStr, 1)
-	}
-
-	query := fmt.Sprintf("UPDATE %s SET %s", qb.table, setClausesStr)
-
-	// WHERE 절 추가
 	if len(qb.conditions) > 0 {
 		query += " WHERE " + strings.Join(qb.conditions, " AND ")
-		updateArgs = append(updateArgs, qb.args...)
+
+		if qb.dbType == PostgreSQL {
+			for j := 0; j < len(qb.args); j++ {
+				updateArgs = append(updateArgs, qb.args[j])
+			}
+		} else {
+			updateArgs = append(updateArgs, qb.args...)
+		}
 	}
 
 	return query, updateArgs, nil
@@ -716,12 +735,19 @@ ReplacePlaceholders
 func ReplacePlaceholders(dbType DBType, input string, start int) string {
 	switch dbType {
 	case PostgreSQL:
-		return placeholderRegexp.ReplaceAllStringFunc(input, func(m string) string {
+		result := input
+		count := 0
+		for strings.Contains(result, "?") {
+			count++
+			result = strings.Replace(result, "?", fmt.Sprintf("$%d", start+count-1), 1)
+		}
+
+		return placeholderRegexp.ReplaceAllStringFunc(result, func(m string) string {
 			num, _ := strconv.Atoi(strings.TrimPrefix(m, "$"))
 			return "$" + strconv.Itoa(start+num-1)
 		})
 	default:
-		return strings.ReplaceAll(input, "?", "?")
+		return input
 	}
 }
 
