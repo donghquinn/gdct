@@ -513,13 +513,21 @@ func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 	}
 
 	if qb.limit > 0 {
-		queryBuilder.WriteString(" LIMIT ?")
-		qb.args = append(qb.args, qb.limit)
+		limitPlaceholder := "?"
+		if qb.dbType == PostgreSQL {
+			limitPlaceholder = fmt.Sprintf("$%d", len(args)+1)
+		}
+		queryBuilder.WriteString(" LIMIT " + limitPlaceholder)
+		args = append(args, qb.limit)
 	}
 
 	if qb.offset > 0 {
-		queryBuilder.WriteString(" OFFSET ?")
-		qb.args = append(qb.args, qb.offset)
+		offsetPlaceholder := "?"
+		if qb.dbType == PostgreSQL {
+			offsetPlaceholder = fmt.Sprintf("$%d", len(args)+1)
+		}
+		queryBuilder.WriteString(" OFFSET " + offsetPlaceholder)
+		args = append(args, qb.offset)
 	}
 
 	return queryBuilder.String(), args, nil
