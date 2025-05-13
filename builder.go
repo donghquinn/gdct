@@ -38,6 +38,18 @@ type QueryBuilder struct {
 
 var placeholderRegexp = regexp.MustCompile(`\$(\d+)`)
 
+func newBuilder(dbType DBType, table string, op string, columns ...string) *QueryBuilder {
+	qb := &QueryBuilder{dbType: dbType, op: op}
+	safeTable, err := EscapeIdentifier(dbType, table)
+	if err != nil {
+		qb.err = err
+		return qb
+	}
+	qb.table = safeTable
+	qb.columns = sanitizeColumns(dbType, columns, &qb.err)
+	return qb
+}
+
 /*
 BuildSelect
 
@@ -47,9 +59,7 @@ BuildSelect
 @ Return: *QueryBuilder with SELECT operation
 */
 func BuildSelect(dbType DBType, table string, columns ...string) *QueryBuilder {
-	qb := NewQueryBuilder(dbType, table, columns...)
-	qb.op = "SELECT"
-	return qb
+	return newBuilder(dbType, table, "SELECT", columns...)
 }
 
 /*
@@ -60,9 +70,7 @@ BuildInsert
 @ Return: *QueryBuilder with INSERT operation
 */
 func BuildInsert(dbType DBType, table string) *QueryBuilder {
-	qb := NewQueryBuilder(dbType, table)
-	qb.op = "INSERT"
-	return qb
+	return newBuilder(dbType, table, "INSERT")
 }
 
 /*
@@ -73,9 +81,7 @@ BuildUpdate
 @ Return: *QueryBuilder with UPDATE operation
 */
 func BuildUpdate(dbType DBType, table string) *QueryBuilder {
-	qb := NewQueryBuilder(dbType, table)
-	qb.op = "UPDATE"
-	return qb
+	return newBuilder(dbType, table, "UPDATE")
 }
 
 /*
@@ -86,9 +92,7 @@ BuildDelete
 @ Return: *QueryBuilder with DELETE operation
 */
 func BuildDelete(dbType DBType, table string) *QueryBuilder {
-	qb := NewQueryBuilder(dbType, table)
-	qb.op = "DELETE"
-	return qb
+	return newBuilder(dbType, table, "DELETE")
 }
 
 /*
@@ -583,6 +587,27 @@ func (qb *QueryBuilder) buildDelete() (string, []interface{}, error) {
 	return queryBuilder.String(), qb.args, nil
 }
 
+func (qb *QueryBuilder) AddClause(clause *[]string, format string, values ...interface{}) *QueryBuilder {
+	if qb.err != nil {
+		return qb
+	}
+	*clause = append(*clause, fmt.Sprintf(format, values...))
+	return qb
+}
+
+func (qb *QueryBuilder) AddSafeClause(clause *[]string, format string, identifier string, extra string) *QueryBuilder {
+	if qb.err != nil {
+		return qb
+	}
+	safe, err := EscapeIdentifier(qb.dbType, identifier)
+	if err != nil {
+		qb.err = err
+		return qb
+	}
+	*clause = append(*clause, fmt.Sprintf(format, safe, extra))
+	return qb
+}
+
 /*
 shiftPlaceholders
 
@@ -608,18 +633,11 @@ EscapeIdentifier
 @ name: Identifier to escape
 @ Return: Escaped identifier and error if any
 */
-func EscapeIdentifier(dbType DBType, name string) (string, error) {
-	if name == "*" {
-		return name, nil
+func EscapeIdentifier(dbType DBType, ident string) (string, error) {
+	if ident == "" {
+		return "", fmt.Errorf("identifier cannot be empty")
 	}
-
-	// 빈 문자열 검사 추가
-	if name == "" {
-		return "", fmt.Errorf("empty identifier not allowed")
-	}
-
-	// 모든 데이터베이스 타입에 대해 백틱 없이 그대로 반환
-	return name, nil
+	return "`" + strings.ReplaceAll(ident, "`", "``") + "`", nil
 }
 
 /*
@@ -628,12 +646,13 @@ ValidateDirection
 @ direction: Order direction string
 @ Return: Validated order direction ("ASC" or "DESC")
 */
-func ValidateDirection(direction string) string {
-	direction = strings.ToUpper(direction)
-	if direction != "ASC" && direction != "DESC" {
-		return "DESC"
+func ValidateDirection(dir string) string {
+	switch strings.ToUpper(dir) {
+	case "ASC", "DESC":
+		return strings.ToUpper(dir)
+	default:
+		return "ASC"
 	}
-	return direction
 }
 
 /*
@@ -644,21 +663,16 @@ ReplacePlaceholders
 @ startIdx: Starting index for placeholders
 @ Return: Condition string with replaced placeholders
 */
-func ReplacePlaceholders(dbType DBType, condition string, startIdx int) string {
-	if dbType == MariaDB || dbType == Mysql {
-		return condition // MariaDB/MySQL uses "?" directly
+func ReplacePlaceholders(dbType DBType, input string, start int) string {
+	switch dbType {
+	case PostgreSQL:
+		return placeholderRegexp.ReplaceAllStringFunc(input, func(m string) string {
+			num, _ := strconv.Atoi(strings.TrimPrefix(m, "$"))
+			return "$" + strconv.Itoa(start+num-1)
+		})
+	default:
+		return strings.ReplaceAll(input, "?", "?")
 	}
-	var result strings.Builder
-	placeholderCount := startIdx
-	for _, char := range condition {
-		if char == '?' {
-			result.WriteString(fmt.Sprintf("$%d", placeholderCount))
-			placeholderCount++
-		} else {
-			result.WriteRune(char)
-		}
-	}
-	return result.String()
 }
 
 /*
@@ -669,14 +683,31 @@ GeneratePlaceholders
 @ count: Number of placeholders to generate
 @ Return: String of placeholders separated by comma
 */
-func GeneratePlaceholders(dbType DBType, startIdx, count int) string {
-	placeholders := make([]string, count)
+func GeneratePlaceholders(dbType DBType, start, count int) string {
+	ph := make([]string, count)
 	for i := 0; i < count; i++ {
-		if dbType == PostgreSQL {
-			placeholders[i] = fmt.Sprintf("$%d", startIdx+i)
-		} else {
-			placeholders[i] = "?"
+		switch dbType {
+		case PostgreSQL:
+			ph[i] = "$" + strconv.Itoa(start+i)
+		default:
+			ph[i] = "?"
 		}
 	}
-	return strings.Join(placeholders, ", ")
+	return strings.Join(ph, ", ")
+}
+
+func sanitizeColumns(dbType DBType, columns []string, errRef *error) []string {
+	if len(columns) == 0 {
+		return []string{"*"}
+	}
+	safe := make([]string, len(columns))
+	for i, col := range columns {
+		colEsc, err := EscapeIdentifier(dbType, col)
+		if err != nil {
+			*errRef = err
+			return nil
+		}
+		safe[i] = colEsc
+	}
+	return safe
 }
