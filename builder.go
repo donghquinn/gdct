@@ -633,11 +633,18 @@ EscapeIdentifier
 @ name: Identifier to escape
 @ Return: Escaped identifier and error if any
 */
-func EscapeIdentifier(dbType DBType, ident string) (string, error) {
-	if ident == "" {
-		return "", fmt.Errorf("identifier cannot be empty")
+func EscapeIdentifier(dbType DBType, name string) (string, error) {
+	if name == "*" {
+		return name, nil
 	}
-	return "`" + strings.ReplaceAll(ident, "`", "``") + "`", nil
+
+	// 빈 문자열 검사 추가
+	if name == "" {
+		return "", fmt.Errorf("empty identifier not allowed")
+	}
+
+	// 모든 데이터베이스 타입에 대해 백틱 없이 그대로 반환
+	return name, nil
 }
 
 /*
