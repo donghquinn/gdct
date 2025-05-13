@@ -500,12 +500,20 @@ func (qb *QueryBuilder) buildSelect() (string, []interface{}, error) {
 		queryBuilder.WriteString(" ORDER BY " + qb.orderBy)
 	}
 	if qb.limit > 0 {
-		queryBuilder.WriteString(" LIMIT ?")
+		if qb.dbType == PostgreSQL {
+			queryBuilder.WriteString(fmt.Sprintf(" LIMIT $%d", len(qb.args)+1))
+		} else {
+			queryBuilder.WriteString(" LIMIT ?")
+		}
 		qb.args = append(qb.args, qb.limit)
 	}
 	if qb.offset > 0 {
-		queryBuilder.WriteString(" OFFSET ?")
-		qb.args = append(qb.args, qb.offset)
+		if qb.dbType == PostgreSQL {
+			queryBuilder.WriteString(fmt.Sprintf(" OFFEST $%d", len(qb.args)+1))
+		} else {
+			queryBuilder.WriteString(" OFFEST ?")
+		}
+		qb.args = append(qb.args, qb.limit)
 	}
 	return queryBuilder.String(), qb.args, nil
 }
@@ -608,6 +616,18 @@ func (qb *QueryBuilder) AddSafeClause(clause *[]string, format string, identifie
 	return qb
 }
 
+// Support for subqueries
+func (qb *QueryBuilder) Subquery(subquery *QueryBuilder, alias string) string {
+	subSql, subArgs, err := subquery.Build()
+	if err != nil {
+		qb.err = err
+		return ""
+	}
+
+	qb.args = append(qb.args, subArgs...)
+	return fmt.Sprintf("(%s) AS %s", subSql, alias)
+}
+
 /*
 shiftPlaceholders
 
@@ -626,6 +646,18 @@ func shiftPlaceholders(condition string, offset int) string {
 	})
 }
 
+// Consistent placeholder handling
+func (qb *QueryBuilder) processCondition(condition string, args ...interface{}) (string, []interface{}) {
+	// Determine next parameter index
+	nextIndex := len(qb.args) + 1
+
+	// Replace placeholders consistently based on DB type
+	updatedCondition := ReplacePlaceholders(qb.dbType, condition, nextIndex)
+
+	// Return the updated condition and args
+	return updatedCondition, args
+}
+
 /*
 EscapeIdentifier
 
@@ -637,14 +669,25 @@ func EscapeIdentifier(dbType DBType, name string) (string, error) {
 	if name == "*" {
 		return name, nil
 	}
-
-	// 빈 문자열 검사 추가
 	if name == "" {
 		return "", fmt.Errorf("empty identifier not allowed")
 	}
 
-	// 모든 데이터베이스 타입에 대해 백틱 없이 그대로 반환
-	return name, nil
+	// Handle table.column notation
+	parts := strings.Split(name, ".")
+	for i, part := range parts {
+		switch dbType {
+		case PostgreSQL, MariaDB, Mysql:
+			// Use proper quoting based on DB type
+			if dbType == PostgreSQL {
+				parts[i] = fmt.Sprintf("\"%s\"", strings.ReplaceAll(part, "\"", "\"\""))
+			} else {
+				parts[i] = fmt.Sprintf("`%s`", strings.ReplaceAll(part, "`", "``"))
+			}
+		}
+	}
+
+	return strings.Join(parts, "."), nil
 }
 
 /*
