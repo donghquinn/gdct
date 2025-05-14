@@ -95,6 +95,17 @@ func BuildDelete(dbType DBType, table string) *QueryBuilder {
 	return newBuilder(dbType, table, "DELETE")
 }
 
+func BuildCountSelect(dbType DBType, table string, countColumn string) *QueryBuilder {
+	qb := newBuilder(dbType, table, "SELECT")
+	if countColumn == "" {
+		countColumn = "*"
+	}
+
+	// Clear existing columns and set only COUNT
+	qb.columns = []string{fmt.Sprintf("COUNT(%s)", countColumn)}
+	return qb
+}
+
 /*
 NewQueryBuilder
 
@@ -151,6 +162,13 @@ func (qb *QueryBuilder) Aggregate(function, column string) *QueryBuilder {
 	if qb.err != nil {
 		return qb
 	}
+
+	// 특수 케이스: * 는 이스케이프하지 않음
+	if column == "*" {
+		qb.columns = append(qb.columns, fmt.Sprintf("%s(%s)", function, column))
+		return qb
+	}
+
 	safeCol, err := EscapeIdentifier(qb.dbType, column)
 	if err != nil {
 		qb.err = err
