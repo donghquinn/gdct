@@ -139,21 +139,18 @@ Insert Single Data
 @returns: Return Value by RETURNING <Column_name>;
 @args: Query Parameters
 */
-func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []interface{}, args ...string) error {
+func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []interface{}, args ...string) (sql.Result, error) {
 	arguments := convertArgs(args)
 
-	queryResult := connect.QueryRow(queryString, arguments...)
+	insertResult, queryErr := connect.Exec(queryString, arguments...)
 
 	defer connect.Close()
 
-	if returns != nil {
-		// Insert ID
-		if scanErr := queryResult.Scan(returns...); scanErr != nil {
-			return fmt.Errorf("scan returning values by insert: %w", scanErr)
-		}
+	if queryErr != nil {
+		return nil, fmt.Errorf("exec query error: %w", queryErr)
 	}
 
-	return nil
+	return insertResult, nil
 }
 
 /*
@@ -163,7 +160,7 @@ Update Single Data
 @ args: Query Parameters
 @ Return: Affected Rows
 */
-func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...string) (int64, error) {
+func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...string) (sql.Result, error) {
 	arguments := convertArgs(args)
 
 	updateResult, queryErr := connect.Exec(queryString, arguments...)
@@ -171,17 +168,10 @@ func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...stri
 	defer connect.Close()
 
 	if queryErr != nil {
-		return -999, fmt.Errorf("exec query error: %w", queryErr)
+		return nil, fmt.Errorf("exec query error: %w", queryErr)
 	}
 
-	// Insert ID
-	affectedRow, afftedRowErr := updateResult.RowsAffected()
-
-	if afftedRowErr != nil {
-		return -999, fmt.Errorf("get affected row error: %w", afftedRowErr)
-	}
-
-	return affectedRow, nil
+	return updateResult, nil
 }
 
 /*
@@ -191,25 +181,18 @@ DELETE Single Data
 @ args: Query Parameters
 @ Return: Affected Rows
 */
-func (connect *DataBaseConnector) PgDeleteQuery(queryString string, args ...string) (int64, error) {
+func (connect *DataBaseConnector) PgDeleteQuery(queryString string, args ...string) (sql.Result, error) {
 	arguments := convertArgs(args)
 
-	updateResult, queryErr := connect.Exec(queryString, arguments...)
+	deleteResult, queryErr := connect.Exec(queryString, arguments...)
 
 	defer connect.Close()
 
 	if queryErr != nil {
-		return -999, fmt.Errorf("exec query error: %w", queryErr)
+		return nil, fmt.Errorf("exec query error: %w", queryErr)
 	}
 
-	// Insert ID
-	affectedRow, afftedRowErr := updateResult.RowsAffected()
-
-	if afftedRowErr != nil {
-		return -999, fmt.Errorf("get affected row error: %w", afftedRowErr)
-	}
-
-	return affectedRow, nil
+	return deleteResult, nil
 }
 
 /*
