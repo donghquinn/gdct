@@ -43,185 +43,6 @@ go get github.com/donghquinn/gdct
     * QueryBuilderOneRow will query single row
     * QueryBuilderRows will query mutliple rows
 
-### Mariadb / mysql
-
-* Select Rows with query builder
-    * Use QueryBuilderRows for multiple rows and QueryBuilderOneRow for single rows
-
-```go
-package main
-
-import "github.com/donghquinn/gdct"
-
-func main() {
-    var (
-        maxLifeTime = 600
-        maxIdelConns = 50
-        maxOpenConns = 10
-    )
-
-    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
-        UserName: "test",
-        Password: "1234",
-        Host: "192.168.0.101",
-        Port: 123,
-        Database: "test_db",
-        MaxLifeTime: &maxLifeTime,
-        MaxIdleConns: &maxIdelConns,
-        MaxOpenConns: &maxOpenConns
-    })
-
-    // ...
-
-    qb := gdct.BuildSelect(gdct.MariaDB, "table_name", "col1").
-        Where("col1 = ?", 100).
-        OrderBy("col1", "ASC", nil).
-        Limit(10).
-        Offset(5)
-
-	queryString, args, err := qb.Build()
-
-    queryResult, queryErr := conn.QueryBuilderRows(queryString, args)
-}
-```
-
-
-* select one row query
-    * You can use MrSelect... method for query string, not using query builder
-
-```go
-package main
-
-import "github.com/donghquinn/gdct"
-
-func main() {
-    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
-        UserName: "test",
-        Password: "1234",
-        Host: "192.168.0.101",
-        Port: 123,
-        Database: "test_db",
-    })
-
-	queryResult, queryErr := conn.MrSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = ? AND example_status = ?", "1234", "1")
-
-    // ...
-}
-```
-
-* Insert Multiple
-
-```go
-package main
-
-import "github.com/donghquinn/gdct"
-
-func main() {
-    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
-        UserName: "test",
-        Password: "1234",
-        Host: "192.168.0.101",
-        Port: 123,
-        Database: "test_db",
-    })
-
-    queryList := make([]gdct.PreparedQuery, len(dataList))
-
-    for _ data := range dataList {
-        queryData := gdct.PreparedQuery{
-            Query: "INSERT INTO example_table (column1, column2, column3) VALUES ($1, $2, $3)",
-            Params: []interface{}{
-                data.exampleItem,
-                data.exampleItem2,
-                data.exampleItem3,
-            }
-        }
-
-        queryList = queryList.append(queryList, queryData)
-    }
-
-	insertResultList, queryErr := conn.MrInsertMultiple(queryList)
-
-    // ...
-}
-
-```
-
-* Update Multiple
-
-```go
-package main
-
-import "github.com/donghquinn/gdct"
-
-func main() {
-    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
-        UserName: "test",
-        Password: "1234",
-        Host: "192.168.0.101",
-        Port: 123,
-        Database: "test_db",
-    })
-
-    queryList := make([]gdct.PreparedQuery, len(dataList))
-
-    for _ data := range dataList {
-        queryData := gdct.PreparedQuery{
-            Query: "UPDATE example_table SET column1 = $1, column2 = $2, column = $3",
-            Params: []interface{}{
-                data.exampleItem,
-                data.exampleItem2,
-                data.exampleItem3,
-            }
-        }
-
-        queryList = queryList.append(queryList, queryData)
-    }
-
-	insertResultList, queryErr := conn.MrUpdateMultiple(queryList)
-
-    // ...
-}
-
-```
-
-* DELETE Multiple
-
-```go
-package main
-
-import "github.com/donghquinn/gdct"
-
-func main() {
-    conn, _ := gdct.InitConnect(gdct.MariaDB, gdct.DBConfig{
-        UserName: "test",
-        Password: "1234",
-        Host: "192.168.0.101",
-        Port: 123,
-        Database: "test_db",
-    })
-
-    queryList := make([]gdct.PreparedQuery, len(dataList))
-
-    for _ data := range dataList {
-        queryData := gdct.PreparedQuery{
-            Query: "DELETE example_table WHERE column1 = $1, column2 = $2, column = $3",
-            Params: []interface{}{
-                data.exampleItem,
-                data.exampleItem2,
-                data.exampleItem3,
-            }
-        }
-
-        queryList = queryList.append(queryList, queryData)
-    }
-
-	insertResultList, queryErr := conn.MrDeleteMultiple(queryList)
-
-    // ...
-}
-
-```
 
 ### Postgres
 * All the methods are started with 'pg'
@@ -245,7 +66,7 @@ func main() {
         maxOpenConns = 10
     )
 
-    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -289,6 +110,31 @@ func main() {
 
 * Select without query builder
 
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    sslMode := "disable"
+
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        SslMode: &sslMode
+    })
+
+    // SELECT example_id FROM example_table WHERE example_id = $1 AND example_status = $2"
+    qb := conn.PgSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = $1 AND example_status = $2", "1234", "1")
+
+    // ...
+}
+```
+
+* Select with query builder
 
 ```go
 package main
@@ -298,7 +144,7 @@ import "github.com/donghquinn/gdct"
 func main() {
     sslMode := "disable"
 
-    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -307,8 +153,41 @@ func main() {
         SslMode: &sslMode
     })
 
-	queryResult, queryErr := conn.PgSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = $1 AND example_status = $2", "1234", "1")
+    // SELECT example_id FROM example_table WHERE example_id = $1 AND example_status = $2"
+    query, args, buildErr := gdct.BuildSelect(gdct.PostgreSQL, "example_table", "example_id").
+        Where("example_id = ?", exampleId).
+        Where("example_status = ?", "1").
+        Build()
 
+    // ...
+}
+```
+
+
+* Select COUNT with query builder
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    sslMode := "disable"
+
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        SslMode: &sslMode
+    })
+ 
+    // SELECT COUNT(example_id) FROM example_table WHERE example_id = $1 AND example_status = $2"
+    query, args, buildErr := gdct.BuildCountSelect(gdct.PostgreSQL, "example_table", "example_id").
+        Where("example_id = ?", exampleId).
+        Where("example_status = ?", "1").
+        Build()
     // ...
 }
 ```
@@ -317,7 +196,7 @@ func main() {
     * Can get returning values from INSERT queries
 
 ```go
-    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -385,7 +264,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -424,7 +303,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -464,7 +343,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitConnect(gdct.PostgreSQL, gdct.DBConfig{
+    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -489,6 +368,186 @@ func main() {
     }
 
 	insertResultList, queryErr := conn.PgUpdateMultiple(queryList)
+
+    // ...
+}
+
+```
+
+### Mariadb / mysql
+
+* Select Rows with query builder
+    * Use QueryBuilderRows for multiple rows and QueryBuilderOneRow for single rows
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    var (
+        maxLifeTime = 600
+        maxIdelConns = 50
+        maxOpenConns = 10
+    )
+
+    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+        MaxLifeTime: &maxLifeTime,
+        MaxIdleConns: &maxIdelConns,
+        MaxOpenConns: &maxOpenConns
+    })
+
+    // ...
+
+    qb := gdct.BuildSelect(gdct.MariaDB, "table_name", "col1").
+        Where("col1 = ?", 100).
+        OrderBy("col1", "ASC", nil).
+        Limit(10).
+        Offset(5)
+
+	queryString, args, err := qb.Build()
+
+    queryResult, queryErr := conn.QueryBuilderRows(queryString, args)
+}
+```
+
+
+* select one row query
+    * You can use MrSelect... method for query string, not using query builder
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+	queryResult, queryErr := conn.MrSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = ? AND example_status = ?", "1234", "1")
+
+    // ...
+}
+```
+
+* Insert Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(dataList))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "INSERT INTO example_table (column1, column2, column3) VALUES ($1, $2, $3)",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.MrInsertMultiple(queryList)
+
+    // ...
+}
+
+```
+
+* Update Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(dataList))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "UPDATE example_table SET column1 = $1, column2 = $2, column = $3",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.MrUpdateMultiple(queryList)
+
+    // ...
+}
+
+```
+
+* DELETE Multiple
+
+```go
+package main
+
+import "github.com/donghquinn/gdct"
+
+func main() {
+    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+        UserName: "test",
+        Password: "1234",
+        Host: "192.168.0.101",
+        Port: 123,
+        Database: "test_db",
+    })
+
+    queryList := make([]gdct.PreparedQuery, len(dataList))
+
+    for _ data := range dataList {
+        queryData := gdct.PreparedQuery{
+            Query: "DELETE example_table WHERE column1 = $1, column2 = $2, column = $3",
+            Params: []interface{}{
+                data.exampleItem,
+                data.exampleItem2,
+                data.exampleItem3,
+            }
+        }
+
+        queryList = queryList.append(queryList, queryData)
+    }
+
+	insertResultList, queryErr := conn.MrDeleteMultiple(queryList)
 
     // ...
 }
