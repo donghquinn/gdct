@@ -727,21 +727,39 @@ func EscapeIdentifier(dbType DBType, name string) (string, error) {
 		return "", fmt.Errorf("empty identifier not allowed")
 	}
 
-	// Handle table.column notation
-	parts := strings.Split(name, ".")
-	for i, part := range parts {
-		switch dbType {
-		case PostgreSQL, MariaDB, Mysql:
-			// Use proper quoting based on DB type
-			if dbType == PostgreSQL {
-				parts[i] = fmt.Sprintf("\"%s\"", strings.ReplaceAll(part, "\"", "\"\""))
-			} else {
-				parts[i] = fmt.Sprintf("`%s`", strings.ReplaceAll(part, "`", "``"))
-			}
-		}
-	}
+	// 따옴표 없이 그대로 반환
+	return name, nil
 
-	return strings.Join(parts, "."), nil
+	// if name == "*" {
+	// 	return name, nil
+	// }
+	// if name == "" {
+	// 	return "", fmt.Errorf("empty identifier not allowed")
+	// }
+
+	// // 전체 식별자를 하나의 문자열로 처리할지 결정
+	// if strings.Contains(name, ".") {
+	// 	// 전체를 하나의 문자열로 처리하는 경우
+	// 	switch dbType {
+	// 	case PostgreSQL:
+	// 		return fmt.Sprintf("\"%s\"", strings.ReplaceAll(name, "\"", "\"\"")), nil
+	// 	case MariaDB, Mysql:
+	// 		return fmt.Sprintf("`%s`", strings.ReplaceAll(name, "`", "``")), nil
+	// 	}
+	// 	return name, nil
+	// }
+
+	// // 테이블.컬럼 형식 처리
+	// parts := strings.Split(name, ".")
+	// for i, part := range parts {
+	// 	switch dbType {
+	// 	case PostgreSQL:
+	// 		parts[i] = fmt.Sprintf("\"%s\"", strings.ReplaceAll(part, "\"", "\"\""))
+	// 	case MariaDB, Mysql:
+	// 		parts[i] = fmt.Sprintf("`%s`", strings.ReplaceAll(part, "`", "``"))
+	// 	}
+	// }
+	// return strings.Join(parts, "."), nil
 }
 
 /*
