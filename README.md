@@ -67,7 +67,7 @@ func main() {
         maxOpenConns = 10
     )
 
-    conn, _ := gdct.InitPostgresConnection(gdct.PostgreSQL, gdct.DBConfig{
+    conn, _ := gdct.InitConnection(gdct.PostgreSQL, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -392,7 +392,7 @@ func main() {
         maxOpenConns = 10
     )
 
-    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+    conn, _ := gdct.InitConnection(gdct.MariaDB, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -449,7 +449,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+    conn, _ := gdct.InitConnection(gdct.MariaDB, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -487,7 +487,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+    conn, _ := gdct.InitConnection(gdct.MariaDB, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
@@ -525,7 +525,7 @@ package main
 import "github.com/donghquinn/gdct"
 
 func main() {
-    conn, _ := gdct.InitMariadbConnection(gdct.MariaDB, gdct.DBConfig{
+    conn, _ := gdct.InitConnection(gdct.MariaDB, gdct.DBConfig{
         UserName: "test",
         Password: "1234",
         Host: "192.168.0.101",
