@@ -29,33 +29,20 @@ func TestCheckPostTest(t *testing.T) {
 	}
 }
 
-// func TestQueryTest(t *testing.T) {
-// 	conn, connErr := gdct.InitConnection("postgres", gdct.DBConfig{
-// 		Host:     "192.168.0.241",
-// 		Port:     5432,
-// 		UserName: "its",
-// 		Password: "1234",
-// 		Database: "its",
-// 		SslMode:  "disable",
-// 	})
+func TestCheckSqlTest(t *testing.T) {
+	conn, connErr := gdct.InitConnection(gdct.Sqlite, gdct.DBConfig{
+		Database: "./db.sqlite",
+	})
 
-// 	if connErr != nil {
-// 		t.Fatalf("[POST_SELECT_SINGLE] Create Connection Test Error: %v", connErr)
-// 	}
+	if connErr != nil {
+		t.Fatalf("[SQLITE_CHECK] Create Connection Test Error: %v", connErr)
+	}
 
-// 	queryResult, queryErr := conn.PgSelectSingle("SELECT COUNT(example_id) FROM example_table WHERE example_id = $1", "1234")
-// 	if queryErr != nil {
-// 		t.Fatalf("[POST_SELECT_SINGLE] Connection Test Error: %v", queryErr)
-// 	}
-
-// 	var totalCount int64
-
-// 	if scanErr := queryResult.Scan(&totalCount); scanErr != nil {
-// 		t.Fatalf("[POST_SELECT_SINGLE] Scan Error: %v", scanErr)
-// 	}
-
-// 	t.Logf("[POST_SELECT_SINGLE] Total Count :%d", totalCount)
-// }
+	pingErr := conn.MrCheckConnection()
+	if pingErr != nil {
+		t.Fatalf("[SQLITE_CHECK] Connection Test Error: %v", pingErr)
+	}
+}
 
 func TestCheckMariaTest(t *testing.T) {
 	lifetime := time.Duration(600) * time.Second

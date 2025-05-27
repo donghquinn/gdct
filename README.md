@@ -39,6 +39,7 @@ go get github.com/donghquinn/gdct
 * Every  Single Method will close connection after transaction commited.
 * So you have to open connection again for every time.
 * Postgres start with Pg and Mariadb start with Mr
+    * (2025-05-27 Added) Sqlite3 Added. It start with Sq
 * (2025-04-10 Added) QueryBuilderOneRow() and QueryBuilderRows() is the mothods for builded query strings
     * QueryBuilderOneRow will query single row
     * QueryBuilderRows will query mutliple rows
@@ -551,5 +552,14 @@ func main() {
 
     // ...
 }
+
+```
+
+## Sqlite3
+
+```go
+	conn, connErr := gdct.InitConnection(gdct.Sqlite, gdct.DBConfig{
+		Database: "./db.sqlite",
+	})
 
 ```
