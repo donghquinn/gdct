@@ -10,7 +10,7 @@ import (
 )
 
 // Initiate Mariadb Connection
-func InitMariadbConnection(cfg DBConfig) (*DataBaseConnector, error) {
+func InitMariadbConnection(dbType string, cfg DBConfig) (*DataBaseConnector, error) {
 	dbUrl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		cfg.UserName,
 		cfg.Password,
@@ -19,7 +19,7 @@ func InitMariadbConnection(cfg DBConfig) (*DataBaseConnector, error) {
 		cfg.Database,
 	)
 
-	db, err := sql.Open("mysql", dbUrl)
+	db, err := sql.Open(dbType, dbUrl)
 
 	if err != nil {
 		return nil, fmt.Errorf("postgres open connection error: %w", err)

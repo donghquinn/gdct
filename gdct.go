@@ -30,11 +30,13 @@ type PreparedQuery struct {
 func InitConnection(dbType DBType, cfg DBConfig) (*DataBaseConnector, error) {
 	switch dbType {
 	case MariaDB:
-		return InitMariadbConnection(cfg)
+		return InitMariadbConnection("mysql", cfg)
 	case Mysql:
-		return InitMariadbConnection(cfg)
+		return InitMariadbConnection("mysql", cfg)
 	case PostgreSQL:
-		return InitPostgresConnection(cfg)
+		return InitPostgresConnection("postgres", cfg)
+	case Sqlite:
+		return InitSqliteConnection("sqlite", cfg)
 	default:
 		return nil, fmt.Errorf("unsupported DB type: %s", dbType)
 	}

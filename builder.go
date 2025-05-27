@@ -14,6 +14,7 @@ const (
 	PostgreSQL DBType = "postgres"
 	MariaDB    DBType = "mariadb"
 	Mysql      DBType = "mysql"
+	Sqlite     DBType = "sqlite3"
 )
 
 // QueryBuilder is a flexible SQL query builder.

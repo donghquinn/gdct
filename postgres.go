@@ -10,7 +10,7 @@ import (
 )
 
 // DB 연결 인스턴스
-func InitPostgresConnection(cfg DBConfig) (*DataBaseConnector, error) {
+func InitPostgresConnection(dbType string, cfg DBConfig) (*DataBaseConnector, error) {
 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		cfg.UserName,
 		cfg.Password,
@@ -20,7 +20,7 @@ func InitPostgresConnection(cfg DBConfig) (*DataBaseConnector, error) {
 		*cfg.SslMode,
 	)
 
-	db, err := sql.Open("postgres", dbUrl)
+	db, err := sql.Open(dbType, dbUrl)
 
 	if err != nil {
 		return nil, fmt.Errorf("postgres open connection error: %w", err)
