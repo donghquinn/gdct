@@ -136,10 +136,9 @@ func (connect *DataBaseConnector) PgSelectSingle(queryString string, args ...str
 Insert Single Data
 
 @queryString: Query String with prepared statement
-@returns: Return Value by RETURNING <Column_name>;
 @args: Query Parameters
 */
-func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []interface{}, args ...string) (sql.Result, error) {
+func (connect *DataBaseConnector) PgInsertQuery(queryString string, args ...string) (sql.Result, error) {
 	arguments := convertArgs(args)
 
 	insertResult, queryErr := connect.Exec(queryString, arguments...)
@@ -151,6 +150,29 @@ func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []in
 	}
 
 	return insertResult, nil
+}
+
+/*
+Insert Single Data With Returning
+
+@queryString: Query String with prepared statement
+@returns: Return Value by RETURNING <Column_name>;
+@args: Query Parameters
+*/
+func (connect *DataBaseConnector) PgInsertQueryReturning(queryString string, returns []interface{}, args ...string) error {
+	arguments := convertArgs(args)
+
+	insertResult := connect.QueryRow(queryString, arguments...)
+
+	defer connect.Close()
+
+	if returns != nil {
+		if scanErr := insertResult.Scan(returns...); scanErr != nil {
+			return fmt.Errorf("exec insert query with returning error: %v", scanErr)
+		}
+	}
+
+	return nil
 }
 
 /*
