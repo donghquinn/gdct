@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/donghquinn/gdct"
-	_ "github.com/lib/pq"              // PostgreSQL
 	_ "github.com/go-sql-driver/mysql" // MySQL/MariaDB
+	_ "github.com/lib/pq"              // PostgreSQL
 	_ "github.com/mattn/go-sqlite3"    // SQLite
 )
 
@@ -136,32 +136,32 @@ func demonstrateDatabase(dbType gdct.DBType, config gdct.DBConfig) {
 
 	// Connection example (commented out as it requires actual databases)
 	/*
-	db, err := gdct.InitConnection(dbType, config)
-	if err != nil {
-		log.Printf("Connection to %s failed: %v", dbType, err)
-		return
-	}
-	defer db.Close()
+		db, err := gdct.InitConnection(dbType, config)
+		if err != nil {
+			log.Printf("Connection to %s failed: %v", dbType, err)
+			return
+		}
+		defer db.Close()
 
-	// Test connection
-	switch dbType {
-	case gdct.PostgreSQL:
-		err = db.PgCheckConnection()
-	case gdct.MariaDB:
-		err = db.MrCheckConnection()
-	case gdct.Sqlite:
-		err = db.SqCheckConnection()
-		// SQLite specific optimizations
-		db.SqEnableWAL()
-		db.SqEnableForeignKeys()
-	}
+		// Test connection
+		switch dbType {
+		case gdct.PostgreSQL:
+			err = db.PgCheckConnection()
+		case gdct.MariaDB:
+			err = db.MrCheckConnection()
+		case gdct.Sqlite:
+			err = db.SqCheckConnection()
+			// SQLite specific optimizations
+			db.SqEnableWAL()
+			db.SqEnableForeignKeys()
+		}
 
-	if err != nil {
-		log.Printf("Connection check failed: %v", err)
-		return
-	}
+		if err != nil {
+			log.Printf("Connection check failed: %v", err)
+			return
+		}
 
-	fmt.Printf("✅ Successfully connected to %s\n", dbType)
+		fmt.Printf("✅ Successfully connected to %s\n", dbType)
 	*/
 }
 
@@ -202,7 +202,7 @@ func sqliteSpecificFeatures() {
 
 	// Maintenance operations
 	fmt.Println("Performing maintenance operations...")
-	
+
 	if err := db.SqVacuum(); err != nil {
 		log.Printf("VACUUM failed: %v", err)
 	} else {

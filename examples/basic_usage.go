@@ -63,7 +63,7 @@ func basicExample() {
 	//     return
 	// }
 	// defer rows.Close()
-	// 
+	//
 	// // Process results...
 }
 
@@ -130,9 +130,9 @@ func crudOperationsExample() {
 
 	// UPDATE example
 	updateData := map[string]interface{}{
-		"last_login":    time.Now(),
-		"login_count":   "login_count + 1", // Raw SQL expression
-		"updated_at":    time.Now(),
+		"last_login":  time.Now(),
+		"login_count": "login_count + 1", // Raw SQL expression
+		"updated_at":  time.Now(),
 	}
 
 	updateQuery, updateArgs, err := gdct.BuildUpdate(gdct.PostgreSQL, "users").

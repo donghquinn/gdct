@@ -62,19 +62,19 @@ var (
 
 func newBuilder(dbType DBType, table string, op string, columns ...string) *QueryBuilder {
 	qb := &QueryBuilder{dbType: dbType, op: op}
-	
+
 	// Validate database type
 	if !dbType.IsValid() {
 		qb.err = fmt.Errorf("%w: %s", ErrInvalidDBType, dbType)
 		return qb
 	}
-	
+
 	// Validate and escape table name
 	if table == "" {
 		qb.err = fmt.Errorf("table name cannot be empty")
 		return qb
 	}
-	
+
 	safeTable, err := EscapeIdentifier(dbType, table)
 	if err != nil {
 		qb.err = fmt.Errorf("invalid table name: %w", err)
@@ -113,7 +113,7 @@ func BuildCountSelect(dbType DBType, table string, countColumn string) *QueryBui
 	if qb.err != nil {
 		return qb
 	}
-	
+
 	if countColumn == "" {
 		countColumn = "*"
 	}
@@ -208,12 +208,12 @@ func (qb *QueryBuilder) Select(columns ...string) *QueryBuilder {
 		qb.err = fmt.Errorf("Select() can only be used with SELECT queries")
 		return qb
 	}
-	
+
 	safeColumns := sanitizeColumns(qb.dbType, columns, &qb.err)
 	if qb.err != nil {
 		return qb
 	}
-	
+
 	qb.columns = append(qb.columns, safeColumns...)
 	return qb
 }
@@ -231,7 +231,7 @@ func (qb *QueryBuilder) OrWhere(condition string, args ...interface{}) *QueryBui
 
 	startIdx := len(qb.args) + 1
 	updatedCondition := ReplacePlaceholders(qb.dbType, condition, startIdx)
-	
+
 	// If there are existing conditions, wrap them with the new OR condition
 	if len(qb.conditions) > 0 {
 		lastCondition := qb.conditions[len(qb.conditions)-1]
@@ -239,7 +239,7 @@ func (qb *QueryBuilder) OrWhere(condition string, args ...interface{}) *QueryBui
 	} else {
 		qb.conditions = append(qb.conditions, updatedCondition)
 	}
-	
+
 	qb.args = append(qb.args, args...)
 	return qb
 }

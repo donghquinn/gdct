@@ -46,7 +46,7 @@ func TestBuildSelect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			qb := BuildSelect(tt.dbType, tt.table, tt.columns...)
-			
+
 			if tt.hasError {
 				if qb.err == nil {
 					t.Errorf("Expected error but got none")
@@ -111,7 +111,7 @@ func TestQueryBuilderWhere(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			qb := BuildSelect(tt.dbType, tt.table).Where(tt.where, tt.args...)
-			
+
 			if tt.hasError {
 				if qb.err == nil {
 					t.Errorf("Expected error but got none")
@@ -182,9 +182,9 @@ func TestQueryBuilderInsert(t *testing.T) {
 			if tt.data != nil {
 				qb = qb.Values(tt.data)
 			}
-			
+
 			query, args, err := qb.Build()
-			
+
 			if tt.hasError {
 				if err == nil {
 					t.Errorf("Expected error but got none")
@@ -232,7 +232,7 @@ func BenchmarkBuildSelect(b *testing.B) {
 			Where("status = ?", "active").
 			OrderBy("created_at", "DESC", nil).
 			Limit(10)
-		
+
 		_, _, err := qb.Build()
 		if err != nil {
 			b.Fatal(err)
@@ -252,7 +252,7 @@ func BenchmarkBuildComplexQuery(b *testing.B) {
 			OrderBy("u.created_at", "DESC", nil).
 			Limit(20).
 			Offset(40)
-		
+
 		_, _, err := qb.Build()
 		if err != nil {
 			b.Fatal(err)

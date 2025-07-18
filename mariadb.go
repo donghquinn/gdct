@@ -22,7 +22,7 @@ func InitMariadbConnection(dbType string, cfg DBConfig) (*DataBaseConnector, err
 	db, err := sql.Open(dbType, dbUrl)
 
 	if err != nil {
-		return nil, fmt.Errorf("postgres open connection error: %w", err)
+		return nil, fmt.Errorf("mariadb open connection error: %w", err)
 	}
 
 	cfg = decideDefaultConfigs(cfg, MariaDB)
@@ -50,9 +50,8 @@ func (connect *DataBaseConnector) MrCheckConnection() error {
 	pingErr := connect.Ping()
 
 	if pingErr != nil {
-		return fmt.Errorf("postgres ping error: %w", pingErr)
+		return fmt.Errorf("mariadb ping error: %w", pingErr)
 	}
-
 
 	return nil
 }
@@ -94,7 +93,6 @@ func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...s
 
 	result, err := connect.Query(queryString, arguments...)
 
-
 	if err != nil {
 		return nil, fmt.Errorf("query select multiple rows error: %w", err)
 	}
@@ -107,7 +105,6 @@ func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...str
 	arguments := convertArgs(args)
 
 	result := connect.QueryRow(queryString, arguments...)
-
 
 	if result.Err() != nil {
 		return nil, fmt.Errorf("query single row error: %w", result.Err())
@@ -122,7 +119,6 @@ func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...stri
 
 	insertResult, insertErr := connect.Exec(queryString, arguments...)
 
-
 	if insertErr != nil {
 		return nil, fmt.Errorf("exec insert query error: %w", insertErr)
 	}
@@ -136,7 +132,6 @@ func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...stri
 
 	updateResult, updateErr := connect.Exec(queryString, arguments...)
 
-
 	if updateErr != nil {
 		return nil, fmt.Errorf("exec update query error: %w", updateErr)
 	}
@@ -149,7 +144,6 @@ func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...stri
 	arguments := convertArgs(args)
 
 	delResult, delErr := connect.Exec(queryString, arguments...)
-
 
 	if delErr != nil {
 		return nil, fmt.Errorf("exec delete query error: %w", delErr)
