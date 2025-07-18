@@ -760,28 +760,28 @@ shiftPlaceholders
 @ offset: Value to add to placeholder indices
 @ Return: Condition string with shifted placeholders
 */
-func shiftPlaceholders(condition string, offset int) string {
-	return placeholderRegexp.ReplaceAllStringFunc(condition, func(match string) string {
-		numStr := match[1:]
-		num, err := strconv.Atoi(numStr)
-		if err != nil {
-			return match
-		}
-		return fmt.Sprintf("$%d", num+offset)
-	})
-}
+// func shiftPlaceholders(condition string, offset int) string {
+// 	return placeholderRegexp.ReplaceAllStringFunc(condition, func(match string) string {
+// 		numStr := match[1:]
+// 		num, err := strconv.Atoi(numStr)
+// 		if err != nil {
+// 			return match
+// 		}
+// 		return fmt.Sprintf("$%d", num+offset)
+// 	})
+// }
 
-// Consistent placeholder handling
-func (qb *QueryBuilder) processCondition(condition string, args ...interface{}) (string, []interface{}) {
-	// Determine next parameter index
-	nextIndex := len(qb.args) + 1
+// // Consistent placeholder handling
+// func (qb *QueryBuilder) processCondition(condition string, args ...interface{}) (string, []interface{}) {
+// 	// Determine next parameter index
+// 	nextIndex := len(qb.args) + 1
 
-	// Replace placeholders consistently based on DB type
-	updatedCondition := ReplacePlaceholders(qb.dbType, condition, nextIndex)
+// 	// Replace placeholders consistently based on DB type
+// 	updatedCondition := ReplacePlaceholders(qb.dbType, condition, nextIndex)
 
-	// Return the updated condition and args
-	return updatedCondition, args
-}
+// 	// Return the updated condition and args
+// 	return updatedCondition, args
+// }
 
 /*
 EscapeIdentifier
