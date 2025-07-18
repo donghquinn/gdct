@@ -36,7 +36,7 @@ func InitSqliteConnection(dbType string, cfg DBConfig) (*DataBaseConnector, erro
 		return nil, fmt.Errorf("sqlite ping error: %w", err)
 	}
 
-	connect := &DataBaseConnector{db}
+	connect := &DataBaseConnector{DB: db, dbType: Sqlite}
 	return connect, nil
 }
 
@@ -274,9 +274,7 @@ func (connect *DataBaseConnector) SqDeleteMultiple(queryList []PreparedQuery) ([
 	return txResultList, nil
 }
 
-// Additional SQLite-specific methods
-
-// SqEnableWAL enables Write-Ahead Logging for better concurrency
+// SqEnableWAL enables Write-Ahead Logging for better concurrency.
 func (connect *DataBaseConnector) SqEnableWAL() error {
 	_, err := connect.Exec("PRAGMA journal_mode=WAL")
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Initiate Mariadb Connection
+// InitMariadbConnection initializes a MariaDB/MySQL database connection.
 func InitMariadbConnection(dbType string, cfg DBConfig) (*DataBaseConnector, error) {
 	dbUrl := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
 		cfg.UserName,
@@ -22,30 +22,27 @@ func InitMariadbConnection(dbType string, cfg DBConfig) (*DataBaseConnector, err
 	db, err := sql.Open(dbType, dbUrl)
 
 	if err != nil {
-		return nil, fmt.Errorf("postgres open connection error: %w", err)
+		return nil, fmt.Errorf("mariadb open connection error: %w", err)
 	}
 
 	cfg = decideDefaultConfigs(cfg, MariaDB)
 
+	if cfg.MaxOpenConns != nil {
+		db.SetMaxOpenConns(*cfg.MaxOpenConns)
+	}
 	if cfg.MaxIdleConns != nil {
-		db.SetMaxOpenConns(*cfg.MaxIdleConns)
+		db.SetMaxIdleConns(*cfg.MaxIdleConns)
 	}
 	if cfg.MaxLifeTime != nil {
 		db.SetConnMaxLifetime(*cfg.MaxLifeTime)
 	}
 
-	if cfg.MaxOpenConns != nil {
-		db.SetMaxIdleConns(*cfg.MaxIdleConns)
-	}
-
-	connect := &DataBaseConnector{db}
+	connect := &DataBaseConnector{DB: db, dbType: MariaDB}
 
 	return connect, nil
 }
 
-/*
-Check Connection
-*/
+// MrCheckConnection checks the MariaDB/MySQL database connection.
 func (connect *DataBaseConnector) MrCheckConnection() error {
 	// log.Printf("Waiting for Database Connection,,,")
 	// time.Sleep(time.Second * 10)
@@ -53,10 +50,8 @@ func (connect *DataBaseConnector) MrCheckConnection() error {
 	pingErr := connect.Ping()
 
 	if pingErr != nil {
-		return fmt.Errorf("postgres ping error: %w", pingErr)
+		return fmt.Errorf("mariadb ping error: %w", pingErr)
 	}
-
-	defer connect.Close()
 
 	return nil
 }
@@ -91,19 +86,12 @@ func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 	return nil
 }
 
-/*
-Query Multiple Rows
-
-@queryString: Query String with prepared statement
-@args: Query Parameters
-@Return: Multiple Row Result
-*/
+// MrSelectMultiple executes a query that returns multiple rows.
+// Note: Caller is responsible for closing the returned *sql.Rows.
 func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
 	arguments := convertArgs(args)
 
 	result, err := connect.Query(queryString, arguments...)
-
-	defer connect.Close()
 
 	if err != nil {
 		return nil, fmt.Errorf("query select multiple rows error: %w", err)
@@ -112,19 +100,11 @@ func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...s
 	return result, nil
 }
 
-/*
-Query Single Row
-
-@queryString: Query String with prepared statement
-@args: Query Parameters
-@Return: Single Row Result
-*/
+// MrSelectSingle executes a query that returns at most one row.
 func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...string) (*sql.Row, error) {
 	arguments := convertArgs(args)
 
 	result := connect.QueryRow(queryString, arguments...)
-
-	defer connect.Close()
 
 	if result.Err() != nil {
 		return nil, fmt.Errorf("query single row error: %w", result.Err())
@@ -133,19 +113,11 @@ func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...str
 	return result, nil
 }
 
-/*
-Insert Single Data
-
-@queryString: Query String with prepared statement
-@args: Query Parameters
-@Return: Insert ID
-*/
+// MrInsertQuery executes an INSERT query.
 func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...string) (sql.Result, error) {
 	arguments := convertArgs(args)
 
 	insertResult, insertErr := connect.Exec(queryString, arguments...)
-
-	defer connect.Close()
 
 	if insertErr != nil {
 		return nil, fmt.Errorf("exec insert query error: %w", insertErr)
@@ -154,19 +126,11 @@ func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...stri
 	return insertResult, nil
 }
 
-/*
-Update Single Data
-
-@ queryString: Query String with prepared statement
-@ args: Query Parameters
-@ Return: Affected Rows
-*/
+// MrUpdateQuery executes an UPDATE query.
 func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...string) (sql.Result, error) {
 	arguments := convertArgs(args)
 
 	updateResult, updateErr := connect.Exec(queryString, arguments...)
-
-	defer connect.Close()
 
 	if updateErr != nil {
 		return nil, fmt.Errorf("exec update query error: %w", updateErr)
@@ -175,19 +139,11 @@ func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...stri
 	return updateResult, nil
 }
 
-/*
-Delete Single Data
-
-@queryString: Query String with prepared statement
-@args: Query Parameters
-@Return: Affected Rows
-*/
+// MrDeleteQuery executes a DELETE query.
 func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...string) (sql.Result, error) {
 	arguments := convertArgs(args)
 
 	delResult, delErr := connect.Exec(queryString, arguments...)
-
-	defer connect.Close()
 
 	if delErr != nil {
 		return nil, fmt.Errorf("exec delete query error: %w", delErr)
@@ -196,11 +152,7 @@ func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...stri
 	return delResult, nil
 }
 
-/*
-INSERT Multiple Data with DB Transaction
-
-@ queryString: Query String with prepared statement
-*/
+// MrInsertMultiple executes multiple INSERT queries within a transaction.
 func (connect *DataBaseConnector) MrInsertMultiple(queryList []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
@@ -243,11 +195,7 @@ func (connect *DataBaseConnector) MrInsertMultiple(queryList []PreparedQuery) ([
 	return txResultList, nil
 }
 
-/*
-UPDATE Multiple Data with DB Transaction
-
-@ queryString: Query String with prepared statement
-*/
+// MrUpdateMultiple executes multiple UPDATE queries within a transaction.
 func (connect *DataBaseConnector) MrUpdateMultiple(queryList []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
@@ -290,11 +238,7 @@ func (connect *DataBaseConnector) MrUpdateMultiple(queryList []PreparedQuery) ([
 	return txResultList, nil
 }
 
-/*
-DELETE Multiple Data with DB Transaction
-
-@ queryString: Query String with prepared statement
-*/
+// MrDeleteMultiple executes multiple DELETE queries within a transaction.
 func (connect *DataBaseConnector) MrDeleteMultiple(queryList []PreparedQuery) ([]sql.Result, error) {
 	ctx := context.Background()
 
