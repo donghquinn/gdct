@@ -1,4 +1,4 @@
-package examples
+package gdct_test
 
 import (
 	"fmt"
