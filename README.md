@@ -1,6 +1,6 @@
 # GDCT - Go Database Client & Query Builder
 
-[![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.19-blue.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.21-blue.svg)](https://golang.org/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/donghquinn/gdct)](https://goreportcard.com/report/github.com/donghquinn/gdct)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
