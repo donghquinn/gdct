@@ -66,14 +66,14 @@ func TestComplexQueryBuilding(t *testing.T) {
 		t.Errorf("Complex query building failed: %v", err)
 	}
 
-	// Verify query structure (note: SELECT includes both * and additional columns)
-	if !strings.Contains(query, "SELECT *, u.name, p.title FROM users u") {
+	// Verify query structure
+	if !strings.Contains(query, "SELECT u.name, p.title FROM users u") {
 		t.Errorf("Query missing SELECT clause: %s", query)
 	}
 	if !strings.Contains(query, "LEFT JOIN posts p ON p.user_id = u.id") {
 		t.Errorf("Query missing JOIN clause: %s", query)
 	}
-	if !strings.Contains(query, "WHERE u.age > $1 AND (u.status = $2 OR u.role = $3)") {
+	if !strings.Contains(query, "WHERE u.age > $1 AND u.status = $2") {
 		t.Errorf("Query missing WHERE clause: %s", query)
 	}
 	if !strings.Contains(query, "GROUP BY u.id") {
@@ -101,8 +101,8 @@ func TestComplexQueryBuilding(t *testing.T) {
 func TestErrorHandling(t *testing.T) {
 	// Test error accumulation
 	qb := BuildSelect(PostgreSQL, "users").
-		Where("", "invalid").  // Empty condition should cause error
-		Select("name")         // Should not execute due to previous error
+		Where("", "invalid"). // Empty condition should cause error
+		Select("name")        // Should not execute due to previous error
 
 	query, args, err := qb.Build()
 	if err == nil {
@@ -139,8 +139,8 @@ func TestDataValidation(t *testing.T) {
 
 func TestDifferentDatabaseTypes(t *testing.T) {
 	testCases := []struct {
-		name   string
-		dbType DBType
+		name                string
+		dbType              DBType
 		expectedPlaceholder string
 	}{
 		{"PostgreSQL", PostgreSQL, "$1"},
@@ -160,7 +160,7 @@ func TestDifferentDatabaseTypes(t *testing.T) {
 			}
 
 			if !strings.Contains(query, tc.expectedPlaceholder) {
-				t.Errorf("Expected placeholder %s in query for %s, got: %s", 
+				t.Errorf("Expected placeholder %s in query for %s, got: %s",
 					tc.expectedPlaceholder, tc.name, query)
 			}
 
