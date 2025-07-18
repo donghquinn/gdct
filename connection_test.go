@@ -1,16 +1,14 @@
-package gdct_test
+package gdct
 
 import (
 	"testing"
 	"time"
-
-	"github.com/donghquinn/gdct"
 )
 
 func TestCheckPostTest(t *testing.T) {
 	sslMode := "disable" // Only Postgres
 
-	conn, connErr := gdct.InitConnection(gdct.PostgreSQL, gdct.DBConfig{
+	conn, connErr := InitConnection(PostgreSQL, DBConfig{
 		Host:     "192.168.0.241",
 		Port:     5432,
 		UserName: "its",
@@ -30,7 +28,7 @@ func TestCheckPostTest(t *testing.T) {
 }
 
 func TestCheckSqlTest(t *testing.T) {
-	conn, connErr := gdct.InitConnection(gdct.Sqlite, gdct.DBConfig{
+	conn, connErr := InitConnection(Sqlite, DBConfig{
 		Database: "./db.sqlite",
 	})
 
@@ -49,7 +47,7 @@ func TestCheckMariaTest(t *testing.T) {
 	idleConns := 10
 	openConns := 50
 
-	conn, connErr := gdct.InitConnection(gdct.MariaDB, gdct.DBConfig{
+	conn, connErr := InitConnection(MariaDB, DBConfig{
 		Host:         "192.168.0.241",
 		Port:         3306,
 		UserName:     "its",
@@ -71,7 +69,7 @@ func TestCheckMariaTest(t *testing.T) {
 }
 
 func TestCheckMysqlTest(t *testing.T) {
-	conn, connErr := gdct.InitConnection(gdct.Mysql, gdct.DBConfig{
+	conn, connErr := InitConnection(Mysql, DBConfig{
 		Host:     "192.168.0.241",
 		Port:     3306,
 		UserName: "its",
