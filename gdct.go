@@ -6,27 +6,32 @@ import (
 	"time"
 )
 
+// DBConfig holds database connection configuration.
 type DBConfig struct {
-	UserName     string
-	Password     string
-	Host         string
-	Port         int
-	Database     string
-	SslMode      *string
-	MaxLifeTime  *time.Duration
-	MaxIdleConns *int
-	MaxOpenConns *int
+	UserName     string         // Database username
+	Password     string         // Database password
+	Host         string         // Database host
+	Port         int            // Database port
+	Database     string         // Database name or file path for SQLite
+	SslMode      *string        // SSL mode for PostgreSQL
+	MaxLifeTime  *time.Duration // Maximum connection lifetime
+	MaxIdleConns *int           // Maximum idle connections
+	MaxOpenConns *int           // Maximum open connections
 }
 
+// DataBaseConnector wraps sql.DB with additional functionality.
 type DataBaseConnector struct {
 	*sql.DB
+	dbType DBType // Store database type for query building
 }
 
+// PreparedQuery represents a prepared SQL query with parameters.
 type PreparedQuery struct {
-	Query  string
-	Params []interface{}
+	Query  string        // SQL query string
+	Params []interface{} // Query parameters
 }
 
+// InitConnection creates a new database connection based on the database type.
 func InitConnection(dbType DBType, cfg DBConfig) (*DataBaseConnector, error) {
 	switch dbType {
 	case MariaDB:
@@ -36,56 +41,41 @@ func InitConnection(dbType DBType, cfg DBConfig) (*DataBaseConnector, error) {
 	case PostgreSQL:
 		return InitPostgresConnection("postgres", cfg)
 	case Sqlite:
-		return InitSqliteConnection("sqlite", cfg)
+		return InitSqliteConnection("sqlite3", cfg)
 	default:
 		return nil, fmt.Errorf("unsupported DB type: %s", dbType)
 	}
 }
 
+// QueryBuilderRows executes a query that returns multiple rows.
+// Note: Caller is responsible for closing the returned *sql.Rows.
 func (connect *DataBaseConnector) QueryBuilderRows(queryString string, args []interface{}) (*sql.Rows, error) {
 	result, err := connect.Query(queryString, args...)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query execution failed: %w", err)
 	}
-
-	defer connect.Close()
-
 	return result, nil
 }
 
-func (connect *DataBaseConnector) QueryBuilderOneRow(queryString string, args []interface{}) (*sql.Row, error) {
-	result := connect.QueryRow(queryString, args...)
-
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	defer connect.Close()
-
-	return result, nil
+// QueryBuilderOneRow executes a query that returns at most one row.
+func (connect *DataBaseConnector) QueryBuilderOneRow(queryString string, args []interface{}) *sql.Row {
+	return connect.QueryRow(queryString, args...)
 }
 
+// QueryBuilderInsert executes an INSERT query.
 func (connect *DataBaseConnector) QueryBuilderInsert(queryString string, args []interface{}) (sql.Result, error) {
-	updateResult, err := connect.Exec(queryString, args...)
-
+	result, err := connect.Exec(queryString, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("insert execution failed: %w", err)
 	}
-
-	defer connect.Close()
-
-	return updateResult, nil
+	return result, nil
 }
 
+// QueryBuilderUpdate executes an UPDATE query.
 func (connect *DataBaseConnector) QueryBuilderUpdate(queryString string, args []interface{}) (sql.Result, error) {
-	updateResult, err := connect.Exec(queryString, args...)
-
+	result, err := connect.Exec(queryString, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("update execution failed: %w", err)
 	}
-
-	defer connect.Close()
-
-	return updateResult, nil
+	return result, nil
 }

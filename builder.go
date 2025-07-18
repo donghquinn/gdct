@@ -17,33 +17,67 @@ const (
 	Sqlite     DBType = "sqlite3"
 )
 
-// QueryBuilder is a flexible SQL query builder.
-type QueryBuilder struct {
-	op         string // "SELECT", "INSERT", "UPDATE", "DELETE"
-	dbType     DBType
-	table      string
-	columns    []string
-	joins      []string
-	conditions []string
-	groupBy    []string
-	having     []string
-	orderBy    string
-	limit      int
-	offset     int
-	args       []interface{}
-	distinct   bool
-	err        error
-	data       map[string]interface{} // for INSERT and UPDATE
-	returning  string                 // for INSERT, Postgres only
+// String returns the string representation of DBType.
+func (d DBType) String() string {
+	return string(d)
 }
 
-var placeholderRegexp = regexp.MustCompile(`\$(\d+)`)
+// IsValid checks if the DBType is valid.
+func (d DBType) IsValid() bool {
+	switch d {
+	case PostgreSQL, MariaDB, Mysql, Sqlite:
+		return true
+	default:
+		return false
+	}
+}
+
+// QueryBuilder is a flexible SQL query builder.
+type QueryBuilder struct {
+	op         string                 // "SELECT", "INSERT", "UPDATE", "DELETE"
+	dbType     DBType                 // Database type for dialect-specific handling
+	table      string                 // Table name
+	columns    []string               // SELECT columns
+	joins      []string               // JOIN clauses
+	conditions []string               // WHERE conditions
+	groupBy    []string               // GROUP BY columns
+	having     []string               // HAVING conditions
+	orderBy    string                 // ORDER BY clause
+	limit      int                    // LIMIT value
+	offset     int                    // OFFSET value
+	args       []interface{}          // Query arguments
+	distinct   bool                   // DISTINCT flag
+	err        error                  // Error accumulator
+	data       map[string]interface{} // Data for INSERT and UPDATE
+	returning  string                 // RETURNING clause (PostgreSQL only)
+}
+
+var (
+	placeholderRegexp = regexp.MustCompile(`\$(\d+)`)
+	// Common errors
+	ErrEmptyIdentifier = fmt.Errorf("empty identifier not allowed")
+	ErrInvalidDBType   = fmt.Errorf("invalid database type")
+	ErrNoDataProvided  = fmt.Errorf("no data provided")
+)
 
 func newBuilder(dbType DBType, table string, op string, columns ...string) *QueryBuilder {
 	qb := &QueryBuilder{dbType: dbType, op: op}
+	
+	// Validate database type
+	if !dbType.IsValid() {
+		qb.err = fmt.Errorf("%w: %s", ErrInvalidDBType, dbType)
+		return qb
+	}
+	
+	// Validate and escape table name
+	if table == "" {
+		qb.err = fmt.Errorf("table name cannot be empty")
+		return qb
+	}
+	
 	safeTable, err := EscapeIdentifier(dbType, table)
 	if err != nil {
-		qb.err = err
+		qb.err = fmt.Errorf("invalid table name: %w", err)
 		return qb
 	}
 	qb.table = safeTable
@@ -51,53 +85,35 @@ func newBuilder(dbType DBType, table string, op string, columns ...string) *Quer
 	return qb
 }
 
-/*
-BuildSelect
-
-@ dbType: Database type (PostgreSQL, MariaDB, Mysql)
-@ table: Table name
-@ columns: Columns to select
-@ Return: *QueryBuilder with SELECT operation
-*/
+// BuildSelect creates a new SELECT query builder.
+// If no columns are provided, defaults to "*".
 func BuildSelect(dbType DBType, table string, columns ...string) *QueryBuilder {
 	return newBuilder(dbType, table, "SELECT", columns...)
 }
 
-/*
-BuildInsert
-
-@ dbType: Database type (PostgreSQL, MariaDB, Mysql)
-@ table: Table name
-@ Return: *QueryBuilder with INSERT operation
-*/
+// BuildInsert creates a new INSERT query builder.
 func BuildInsert(dbType DBType, table string) *QueryBuilder {
 	return newBuilder(dbType, table, "INSERT")
 }
 
-/*
-BuildUpdate
-
-@ dbType: Database type (PostgreSQL, MariaDB, Mysql)
-@ table: Table name
-@ Return: *QueryBuilder with UPDATE operation
-*/
+// BuildUpdate creates a new UPDATE query builder.
 func BuildUpdate(dbType DBType, table string) *QueryBuilder {
 	return newBuilder(dbType, table, "UPDATE")
 }
 
-/*
-BuildDelete
-
-@ dbType: Database type (PostgreSQL, MariaDB, Mysql)
-@ table: Table name
-@ Return: *QueryBuilder with DELETE operation
-*/
+// BuildDelete creates a new DELETE query builder.
 func BuildDelete(dbType DBType, table string) *QueryBuilder {
 	return newBuilder(dbType, table, "DELETE")
 }
 
+// BuildCountSelect creates a new SELECT COUNT query builder.
+// If countColumn is empty, defaults to "*".
 func BuildCountSelect(dbType DBType, table string, countColumn string) *QueryBuilder {
 	qb := newBuilder(dbType, table, "SELECT")
+	if qb.err != nil {
+		return qb
+	}
+	
 	if countColumn == "" {
 		countColumn = "*"
 	}
@@ -139,32 +155,35 @@ func NewQueryBuilder(dbType DBType, table string, columns ...string) *QueryBuild
 	return qb
 }
 
-/*
-Distinct
-
-@ Return: *QueryBuilder with DISTINCT enabled
-*/
+// Distinct adds DISTINCT to the SELECT query.
 func (qb *QueryBuilder) Distinct() *QueryBuilder {
 	if qb.err != nil {
+		return qb
+	}
+	if qb.op != "SELECT" {
+		qb.err = fmt.Errorf("DISTINCT can only be used with SELECT queries")
 		return qb
 	}
 	qb.distinct = true
 	return qb
 }
 
-/*
-Aggregate
-
-@ function: Aggregate function (e.g., COUNT, SUM, AVG)
-@ column: Column name to aggregate
-@ Return: *QueryBuilder with aggregate function added
-*/
+// Aggregate adds an aggregate function to the SELECT columns.
+// Supported functions: COUNT, SUM, AVG, MIN, MAX, etc.
 func (qb *QueryBuilder) Aggregate(function, column string) *QueryBuilder {
 	if qb.err != nil {
 		return qb
 	}
+	if qb.op != "SELECT" {
+		qb.err = fmt.Errorf("aggregate functions can only be used with SELECT queries")
+		return qb
+	}
+	if function == "" {
+		qb.err = fmt.Errorf("aggregate function name cannot be empty")
+		return qb
+	}
 
-	// 특수 케이스: * 는 이스케이프하지 않음
+	// Special case: * doesn't need escaping
 	if column == "*" {
 		qb.columns = append(qb.columns, fmt.Sprintf("%s(%s)", function, column))
 		return qb
@@ -172,10 +191,56 @@ func (qb *QueryBuilder) Aggregate(function, column string) *QueryBuilder {
 
 	safeCol, err := EscapeIdentifier(qb.dbType, column)
 	if err != nil {
-		qb.err = err
+		qb.err = fmt.Errorf("invalid column name for aggregate: %w", err)
 		return qb
 	}
 	qb.columns = append(qb.columns, fmt.Sprintf("%s(%s)", function, safeCol))
+	return qb
+}
+
+// Select adds additional columns to the SELECT clause.
+// This method can be called multiple times to add more columns.
+func (qb *QueryBuilder) Select(columns ...string) *QueryBuilder {
+	if qb.err != nil {
+		return qb
+	}
+	if qb.op != "SELECT" {
+		qb.err = fmt.Errorf("Select() can only be used with SELECT queries")
+		return qb
+	}
+	
+	safeColumns := sanitizeColumns(qb.dbType, columns, &qb.err)
+	if qb.err != nil {
+		return qb
+	}
+	
+	qb.columns = append(qb.columns, safeColumns...)
+	return qb
+}
+
+// OrWhere adds an OR condition to the query.
+// This creates a new condition group with OR logic.
+func (qb *QueryBuilder) OrWhere(condition string, args ...interface{}) *QueryBuilder {
+	if qb.err != nil {
+		return qb
+	}
+	if condition == "" {
+		qb.err = fmt.Errorf("condition cannot be empty")
+		return qb
+	}
+
+	startIdx := len(qb.args) + 1
+	updatedCondition := ReplacePlaceholders(qb.dbType, condition, startIdx)
+	
+	// If there are existing conditions, wrap them with the new OR condition
+	if len(qb.conditions) > 0 {
+		lastCondition := qb.conditions[len(qb.conditions)-1]
+		qb.conditions[len(qb.conditions)-1] = fmt.Sprintf("(%s OR %s)", lastCondition, updatedCondition)
+	} else {
+		qb.conditions = append(qb.conditions, updatedCondition)
+	}
+	
+	qb.args = append(qb.args, args...)
 	return qb
 }
 
@@ -239,15 +304,14 @@ func (qb *QueryBuilder) RightJoin(joinTable, onCondition string) *QueryBuilder {
 	return qb
 }
 
-/*
-Where
-
-@ condition: Condition string with placeholders
-@ args: Query parameters
-@ Return: *QueryBuilder with WHERE clause added
-*/
+// Where adds a WHERE condition to the query.
+// Conditions are combined with AND. Use ? as placeholders for parameters.
 func (qb *QueryBuilder) Where(condition string, args ...interface{}) *QueryBuilder {
 	if qb.err != nil {
+		return qb
+	}
+	if condition == "" {
+		qb.err = fmt.Errorf("condition cannot be empty")
 		return qb
 	}
 
@@ -428,30 +492,36 @@ func (qb *QueryBuilder) Offset(offset int) *QueryBuilder {
 	return qb
 }
 
-/*
-Values
-
-@ data: Map of column names to values for INSERT
-@ Return: *QueryBuilder with data set for INSERT
-*/
+// Values adds data for INSERT operations.
+// Data should be a map of column names to values.
 func (qb *QueryBuilder) Values(data map[string]interface{}) *QueryBuilder {
+	if qb.err != nil {
+		return qb
+	}
 	if qb.op != "INSERT" {
 		qb.err = fmt.Errorf("Values() can only be used with INSERT operation")
+		return qb
+	}
+	if len(data) == 0 {
+		qb.err = fmt.Errorf("Values() requires at least one column-value pair")
 		return qb
 	}
 	qb.data = data
 	return qb
 }
 
-/*
-Set
-
-@ data: Map of column names to values for UPDATE
-@ Return: *QueryBuilder with data set for UPDATE
-*/
+// Set adds data for UPDATE operations.
+// Data should be a map of column names to values.
 func (qb *QueryBuilder) Set(data map[string]interface{}) *QueryBuilder {
+	if qb.err != nil {
+		return qb
+	}
 	if qb.op != "UPDATE" {
 		qb.err = fmt.Errorf("Set() can only be used with UPDATE operation")
+		return qb
+	}
+	if len(data) == 0 {
+		qb.err = fmt.Errorf("Set() requires at least one column-value pair")
 		return qb
 	}
 	qb.data = data
