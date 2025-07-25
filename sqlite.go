@@ -81,10 +81,8 @@ func (connect *DataBaseConnector) SqCreateTable(queryList []string) error {
 }
 
 // SqSelectMultiple queries multiple rows from SQLite
-func (connect *DataBaseConnector) SqSelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
-	arguments := convertArgs(args)
-
-	result, err := connect.Query(queryString, arguments...)
+func (connect *DataBaseConnector) SqSelectMultiple(queryString string, args []interface{}) (*sql.Rows, error) {
+	result, err := connect.Query(queryString, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query select multiple rows error: %w", err)
 	}
@@ -93,10 +91,8 @@ func (connect *DataBaseConnector) SqSelectMultiple(queryString string, args ...s
 }
 
 // SqSelectSingle queries single row from SQLite
-func (connect *DataBaseConnector) SqSelectSingle(queryString string, args ...string) (*sql.Row, error) {
-	arguments := convertArgs(args)
-
-	result := connect.QueryRow(queryString, arguments...)
+func (connect *DataBaseConnector) SqSelectSingle(queryString string, args []interface{}) (*sql.Row, error) {
+	result := connect.QueryRow(queryString, args...)
 	if result.Err() != nil {
 		return nil, fmt.Errorf("query single row error: %w", result.Err())
 	}
@@ -105,10 +101,8 @@ func (connect *DataBaseConnector) SqSelectSingle(queryString string, args ...str
 }
 
 // SqInsertQuery inserts data into SQLite
-func (connect *DataBaseConnector) SqInsertQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	insertResult, err := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) SqInsertQuery(queryString string, args []interface{}) (sql.Result, error) {
+	insertResult, err := connect.Exec(queryString, args...)
 	if err != nil {
 		return nil, fmt.Errorf("exec insert query error: %w", err)
 	}
@@ -117,10 +111,8 @@ func (connect *DataBaseConnector) SqInsertQuery(queryString string, args ...stri
 }
 
 // SqUpdateQuery updates data in SQLite
-func (connect *DataBaseConnector) SqUpdateQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	updateResult, err := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) SqUpdateQuery(queryString string, args []interface{}) (sql.Result, error) {
+	updateResult, err := connect.Exec(queryString, args...)
 	if err != nil {
 		return nil, fmt.Errorf("exec update query error: %w", err)
 	}
@@ -129,10 +121,8 @@ func (connect *DataBaseConnector) SqUpdateQuery(queryString string, args ...stri
 }
 
 // SqDeleteQuery deletes data from SQLite
-func (connect *DataBaseConnector) SqDeleteQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	delResult, err := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) SqDeleteQuery(queryString string, args []interface{}) (sql.Result, error) {
+	delResult, err := connect.Exec(queryString, args...)
 	if err != nil {
 		return nil, fmt.Errorf("exec delete query error: %w", err)
 	}

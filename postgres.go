@@ -87,10 +87,8 @@ func (connect *DataBaseConnector) PgCreateTable(queryList []string) error {
 
 // PgSelectMultiple executes a query that returns multiple rows.
 // Note: Caller is responsible for closing the returned *sql.Rows.
-func (connect *DataBaseConnector) PgSelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
-	arguments := convertArgs(args)
-
-	result, err := connect.Query(queryString, arguments...)
+func (connect *DataBaseConnector) PgSelectMultiple(queryString string, args []interface{}) (*sql.Rows, error) {
+	result, err := connect.Query(queryString, args...)
 
 	if err != nil {
 		return nil, fmt.Errorf("query select multiple rows error: %w", err)
@@ -100,10 +98,8 @@ func (connect *DataBaseConnector) PgSelectMultiple(queryString string, args ...s
 }
 
 // PgSelectSingle executes a query that returns at most one row.
-func (connect *DataBaseConnector) PgSelectSingle(queryString string, args ...string) (*sql.Row, error) {
-	arguments := convertArgs(args)
-
-	result := connect.QueryRow(queryString, arguments...)
+func (connect *DataBaseConnector) PgSelectSingle(queryString string, args []interface{}) (*sql.Row, error) {
+	result := connect.QueryRow(queryString, args...)
 
 	if result.Err() != nil {
 		return nil, fmt.Errorf("query single row error: %w", result.Err())
@@ -113,10 +109,8 @@ func (connect *DataBaseConnector) PgSelectSingle(queryString string, args ...str
 }
 
 // PgInsertQuery executes an INSERT query with optional RETURNING clause.
-func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []interface{}, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	insertResult, queryErr := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []interface{}, args []interface{}) (sql.Result, error) {
+	insertResult, queryErr := connect.Exec(queryString, args...)
 
 	if queryErr != nil {
 		return nil, fmt.Errorf("exec query error: %w", queryErr)
@@ -126,10 +120,8 @@ func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []in
 }
 
 // PgUpdateQuery executes an UPDATE query.
-func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	updateResult, queryErr := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args []interface{}) (sql.Result, error) {
+	updateResult, queryErr := connect.Exec(queryString, args...)
 
 	if queryErr != nil {
 		return nil, fmt.Errorf("exec query error: %w", queryErr)
@@ -139,10 +131,8 @@ func (connect *DataBaseConnector) PgUpdateQuery(queryString string, args ...stri
 }
 
 // PgDeleteQuery executes a DELETE query.
-func (connect *DataBaseConnector) PgDeleteQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	deleteResult, queryErr := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) PgDeleteQuery(queryString string, args []interface{}) (sql.Result, error) {
+	deleteResult, queryErr := connect.Exec(queryString, args...)
 
 	if queryErr != nil {
 		return nil, fmt.Errorf("exec query error: %w", queryErr)
