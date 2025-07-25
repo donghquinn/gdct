@@ -88,10 +88,8 @@ func (connect *DataBaseConnector) MrCreateTable(queryList []string) error {
 
 // MrSelectMultiple executes a query that returns multiple rows.
 // Note: Caller is responsible for closing the returned *sql.Rows.
-func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...string) (*sql.Rows, error) {
-	arguments := convertArgs(args)
-
-	result, err := connect.Query(queryString, arguments...)
+func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args []interface{}) (*sql.Rows, error) {
+	result, err := connect.Query(queryString, args...)
 
 	if err != nil {
 		return nil, fmt.Errorf("query select multiple rows error: %w", err)
@@ -101,10 +99,8 @@ func (connect *DataBaseConnector) MrSelectMultiple(queryString string, args ...s
 }
 
 // MrSelectSingle executes a query that returns at most one row.
-func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...string) (*sql.Row, error) {
-	arguments := convertArgs(args)
-
-	result := connect.QueryRow(queryString, arguments...)
+func (connect *DataBaseConnector) MrSelectSingle(queryString string, args []interface{}) (*sql.Row, error) {
+	result := connect.QueryRow(queryString, args...)
 
 	if result.Err() != nil {
 		return nil, fmt.Errorf("query single row error: %w", result.Err())
@@ -114,10 +110,8 @@ func (connect *DataBaseConnector) MrSelectSingle(queryString string, args ...str
 }
 
 // MrInsertQuery executes an INSERT query.
-func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	insertResult, insertErr := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) MrInsertQuery(queryString string, args []interface{}) (sql.Result, error) {
+	insertResult, insertErr := connect.Exec(queryString, args...)
 
 	if insertErr != nil {
 		return nil, fmt.Errorf("exec insert query error: %w", insertErr)
@@ -127,10 +121,8 @@ func (connect *DataBaseConnector) MrInsertQuery(queryString string, args ...stri
 }
 
 // MrUpdateQuery executes an UPDATE query.
-func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	updateResult, updateErr := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args []interface{}) (sql.Result, error) {
+	updateResult, updateErr := connect.Exec(queryString, args...)
 
 	if updateErr != nil {
 		return nil, fmt.Errorf("exec update query error: %w", updateErr)
@@ -140,10 +132,8 @@ func (connect *DataBaseConnector) MrUpdateQuery(queryString string, args ...stri
 }
 
 // MrDeleteQuery executes a DELETE query.
-func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args ...string) (sql.Result, error) {
-	arguments := convertArgs(args)
-
-	delResult, delErr := connect.Exec(queryString, arguments...)
+func (connect *DataBaseConnector) MrDeleteQuery(queryString string, args []interface{}) (sql.Result, error) {
+	delResult, delErr := connect.Exec(queryString, args...)
 
 	if delErr != nil {
 		return nil, fmt.Errorf("exec delete query error: %w", delErr)
