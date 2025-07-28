@@ -107,6 +107,20 @@ func dynamicQueryExample() {
 func crudOperationsExample() {
 	fmt.Println("\n=== CRUD Operations ===")
 
+	// Connect to PostgreSQL
+	db, err := gdct.InitConnection(gdct.PostgreSQL, gdct.DBConfig{
+		Host:     "localhost",
+		Port:     5432,
+		Database: "testdb",
+		UserName: "user",
+		Password: "password",
+	})
+	if err != nil {
+		log.Printf("Connection failed: %v", err)
+		return
+	}
+	defer db.Close()
+
 	// INSERT example
 	userData := map[string]interface{}{
 		"name":       "John Doe",
@@ -127,6 +141,19 @@ func crudOperationsExample() {
 
 	fmt.Printf("Insert Query: %s\n", insertQuery)
 	fmt.Printf("Insert Args: %v\n", insertArgs)
+
+	// Execute the insert with RETURNING to get the inserted ID
+	var insertedID int64
+	returns := []interface{}{&insertedID}
+	
+	result, err := db.PgInsertQuery(insertQuery, returns, insertArgs)
+	if err != nil {
+		log.Printf("Insert execution failed: %v", err)
+		return
+	}
+	
+	fmt.Printf("Inserted ID from RETURNING: %d\n", insertedID)
+	fmt.Printf("Insert Result: %v\n", result)
 
 	// UPDATE example
 	updateData := map[string]interface{}{

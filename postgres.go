@@ -9,6 +9,17 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// mockResult implements sql.Result interface for RETURNING queries
+type mockResult struct{}
+
+func (m *mockResult) LastInsertId() (int64, error) {
+	return 0, fmt.Errorf("LastInsertId is not supported when using RETURNING clause")
+}
+
+func (m *mockResult) RowsAffected() (int64, error) {
+	return 1, nil // Assume 1 row was affected for RETURNING queries
+}
+
 // InitPostgresConnection initializes a PostgreSQL database connection.
 func InitPostgresConnection(dbType string, cfg DBConfig) (*DataBaseConnector, error) {
 	dbUrl := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
@@ -110,8 +121,21 @@ func (connect *DataBaseConnector) PgSelectSingle(queryString string, args []inte
 
 // PgInsertQuery executes an INSERT query with optional RETURNING clause.
 func (connect *DataBaseConnector) PgInsertQuery(queryString string, returns []interface{}, args []interface{}) (sql.Result, error) {
-	insertResult, queryErr := connect.Exec(queryString, args...)
+	// If returns is provided and not empty, we need to handle RETURNING clause
+	if len(returns) > 0 {
+		// Use QueryRow for RETURNING clause to scan the returned values
+		row := connect.QueryRow(queryString, args...)
+		if err := row.Scan(returns...); err != nil {
+			return nil, fmt.Errorf("scan returning values error: %w", err)
+		}
+		
+		// Create a mock Result since we can't get the actual sql.Result from QueryRow
+		// This is a limitation when using RETURNING - you get the returned values but lose Result info
+		return &mockResult{}, nil
+	}
 
+	// No RETURNING clause, use normal Exec
+	insertResult, queryErr := connect.Exec(queryString, args...)
 	if queryErr != nil {
 		return nil, fmt.Errorf("exec query error: %w", queryErr)
 	}
